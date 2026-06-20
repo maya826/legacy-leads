@@ -14,6 +14,9 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/esri-leaflet/3.0.12/esri-leaflet.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
 <style>
   :root{
     --bg:#0B1120; --bg2:#0F1729; --panel:#151D31; --panel-2:#1C2740; --panel-3:#243150;
@@ -242,6 +245,12 @@
   .me{width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
   .me-core{width:15px;height:15px;border-radius:50%;background:#38BDF8;border:3px solid #fff;box-shadow:0 0 0 0 rgba(56,189,248,.5);animation:pulse 1.7s infinite;}
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(56,189,248,.5)}70%{box-shadow:0 0 0 18px rgba(56,189,248,0)}100%{box-shadow:0 0 0 0 rgba(56,189,248,0)}}
+  .geo-prog{position:fixed;left:12px;right:12px;bottom:84px;z-index:1500;background:rgba(15,22,38,.97);border:1px solid var(--line-2);border-radius:14px;padding:9px 12px;box-shadow:0 8px 28px rgba(0,0,0,.55);backdrop-filter:blur(8px);}
+  .geo-prog .gp-bar{height:6px;border-radius:6px;background:rgba(255,255,255,.1);overflow:hidden;margin-bottom:7px;}
+  .geo-prog .gp-fill{height:100%;background:linear-gradient(90deg,var(--brand),#34D399);border-radius:6px;transition:width .4s ease;}
+  .geo-prog .gp-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;font-weight:600;color:var(--text);}
+  .geo-prog .gp-row button{background:var(--line-2);color:var(--text);border:none;border-radius:8px;padding:5px 11px;font-size:11px;font-weight:700;cursor:pointer;}
+  .listcap{padding:9px 12px;margin:0 0 8px;background:rgba(34,211,238,.08);border:1px solid var(--line-2);border-radius:10px;color:var(--muted,#9fb0c9);font-size:12px;font-weight:600;text-align:center;}
   .map-hint{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:800;background:rgba(21,29,49,.92);border:1px solid var(--line-2);color:var(--text);font-size:12px;font-weight:600;padding:8px 15px;border-radius:30px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.45);backdrop-filter:blur(6px);}
   .map-ctrls{position:absolute;right:14px;bottom:100px;z-index:800;display:flex;flex-direction:column;gap:10px;}
   .mctrl{width:46px;height:46px;border-radius:14px;background:var(--panel);border:1px solid var(--line-2);color:var(--text);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.45);}
@@ -269,7 +278,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 9</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 10</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -286,6 +295,7 @@
     <div class="toolbar">
       <button class="btn primary" id="addManual"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add</button>
       <button class="btn" id="importCsv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 9l5-5 5 5M12 4v12"/></svg>Import</button>
+      <button class="btn" id="locateAll" title="Map all leads (geocode)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Locate</button>
       <button class="btn" id="exportCsv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Export</button>
       <input type="file" id="csvFile" accept=".csv,text/csv" style="display:none">
     </div>
@@ -406,12 +416,13 @@
 <script>
 const STATUSES = ["New","Foreclosure","Vacant","Distressed","Absentee","Contacted","Pass"];
 const KEY = "legacyleads_v2";
+const GEO_CAP = 400; // max rows we will live-geocode from one import (rows with lat/lng skip this)
 let leads = load();
 let editingId = null, pendingCoords = null, modalStatus = "New", leadFilter='all', leadSearch='', pendingPhoto='';
 let map, markerLayer;
 
 function load(){ try{ return JSON.parse(localStorage.getItem(KEY)) || []; }catch(e){ return []; } }
-function save(){ localStorage.setItem(KEY, JSON.stringify(leads)); }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(leads)); return true; }catch(e){ try{ toast("Storage full — export & clear some leads","err"); }catch(_){}; return false; } }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function toast(msg, kind){ const t=document.getElementById('toast'); t.textContent=msg; t.className='toast show '+(kind||'ok'); clearTimeout(t._t); t._t=setTimeout(()=>{t.className='toast '+(kind||'ok');},2800); }
 function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -476,12 +487,21 @@ async function reverseGeocode(lat,lng){
   return [[num,road].filter(Boolean).join(" "), city, [st,zip].filter(Boolean).join(" ")].filter(Boolean).join(", ") || d.display_name || "";
 }
 async function forwardGeocode(address){
+  // 1) ArcGIS World Geocoder — best US residential coverage, CORS-enabled, no token for single lookups
+  try{
+    const u='https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=json&maxLocations=1&countryCode=USA&singleLine='+encodeURIComponent(address);
+    const j=await (await fetch(u)).json();
+    const c=j.candidates&&j.candidates[0];
+    if(c&&c.location&&c.score>=80&&c.location.y) return {lat:c.location.y, lng:c.location.x};
+  }catch(e){}
+  // 2) US Census fallback
   try{
     const cu=`https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?benchmark=Public_AR_Current&format=json&address=${encodeURIComponent(address)}`;
     const cj=await (await fetch(cu)).json();
     const m=cj.result&&cj.result.addressMatches&&cj.result.addressMatches[0];
     if(m&&m.coordinates&&m.coordinates.y) return {lat:m.coordinates.y, lng:m.coordinates.x};
   }catch(e){}
+  // 3) Nominatim fallback
   try{
     const r=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=us&q=${encodeURIComponent(address)}`,{headers:{'Accept':'application/json'}});
     const d=await r.json(); if(d.length) return {lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon)};
@@ -572,16 +592,43 @@ document.getElementById('fcParse').addEventListener('click', ()=>{
   if(newOnes.length) geocodeQueue(newOnes);
 });
 
-let geocoding=false;
-async function geocodeQueue(list){
-  if(geocoding) return; geocoding=true;
-  for(const lead of list){
-    try{ const c=await forwardGeocode(lead.address); if(c){ const t=leads.find(x=>x.id===lead.id); if(t){ t.coords=c; save(); render(); } } }catch(e){}
-    await new Promise(r=>setTimeout(r,1100));
-  }
-  geocoding=false; if(document.getElementById('mapView').classList.contains('active')) renderMap();
-  toast("Map pins updated 📍");
+let geocoding=false, geoCancel=false;
+function geoProgressUI(done,total,hit){
+  let el=document.getElementById('geoProg');
+  if(total<=0){ if(el) el.remove(); return; }
+  if(!el){ el=document.createElement('div'); el.id='geoProg'; el.className='geo-prog'; document.body.appendChild(el); }
+  const pct=Math.min(100,Math.round(done/total*100));
+  el.innerHTML=`<div class="gp-bar"><div class="gp-fill" style="width:${pct}%"></div></div>`+
+    `<div class="gp-row"><span>📍 Mapping ${done.toLocaleString()} / ${total.toLocaleString()} · ${hit.toLocaleString()} pinned</span>`+
+    `<button onclick="window.stopGeo()">Pause</button></div>`;
 }
+window.stopGeo=function(){ geoCancel=true; };
+async function bulkGeocode(list){
+  const queue=(list||leads).filter(l=>l&&!l.coords&&l.address);
+  if(!queue.length){ toast("Every lead is already mapped ✓"); return; }
+  if(geocoding){ toast("Already mapping… tap Pause to stop"); return; }
+  geocoding=true; geoCancel=false;
+  const total=queue.length; let done=0, hit=0, idx=0, lastSave=Date.now(), lastUI=Date.now();
+  const CONC=6;
+  geoProgressUI(0,total,0);
+  async function worker(){
+    while(idx<queue.length&&!geoCancel){
+      const lead=queue[idx++]; const t=leads.find(x=>x.id===lead.id);
+      if(!t||t.coords){ done++; continue; }
+      try{ const c=await forwardGeocode(t.address); if(c){ t.coords=c; hit++; } }catch(e){}
+      done++;
+      if(Date.now()-lastSave>4000){ save(); lastSave=Date.now(); }
+      if(Date.now()-lastUI>1200){ geoProgressUI(done,total,hit); if(document.getElementById('mapView').classList.contains('active')) renderMap(); lastUI=Date.now(); }
+      await new Promise(r=>setTimeout(r,80));
+    }
+  }
+  await Promise.all(Array.from({length:CONC},()=>worker()));
+  save(); geocoding=false; geoProgressUI(0,0,0); render();
+  if(document.getElementById('mapView').classList.contains('active')) renderMap(true);
+  toast(geoCancel?`Paused · ${hit.toLocaleString()} mapped, ${(total-done).toLocaleString()} left — tap Locate to resume`:`Mapped ${hit.toLocaleString()} of ${total.toLocaleString()} ✓`);
+}
+// Back-compat wrapper for existing callers (import, foreclosure paste, manual add)
+function geocodeQueue(list){ bulkGeocode(list); }
 
 /* Sheet */
 function buildStatusChips(){
@@ -639,7 +686,9 @@ function render(){
   }
   const view=leads.filter(leadMatch);
   if(!view.length){ wrap.innerHTML=`<div class="empty"><div class="ico">${ICN.map}</div><h3>No matches</h3><p>Adjust the filter or search above.</p></div>`; renderMap(); return; }
-  wrap.innerHTML=view.map(l=>{
+  const LIST_CAP=250; const shown=view.slice(0,LIST_CAP);
+  const capNote=view.length>LIST_CAP?`<div class="listcap">Showing ${LIST_CAP} of ${view.length.toLocaleString()} — search or filter to narrow, or open the Map for all pins</div>`:'';
+  wrap.innerHTML=capNote+shown.map(l=>{
     const traces=traceUrls(l.owner,l.address);
     const cls=l.source==='foreclosure'?'fc':(l.source==='driving'?'drive':'');
     return `<div class="lead ${cls}">
@@ -703,7 +752,10 @@ window.openModal=openModal;
 function initMap(){
   map=L.map('map',{zoomControl:true,attributionControl:false}).setView([33.75,-84.39],6);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:20,subdomains:'abcd'}).addTo(map);
-  markerLayer=L.layerGroup().addTo(map);
+  markerLayer=(typeof L.markerClusterGroup==='function')
+    ? L.markerClusterGroup({chunkedLoading:true, chunkInterval:120, maxClusterRadius:55, spiderfyOnMaxZoom:true, disableClusteringAtZoom:18, removeOutsideVisibleBounds:true})
+    : L.layerGroup();
+  markerLayer.addTo(map);
   initParcels();
   map.on('zoomend moveend', updateParcels);
   map.on('dragstart', ()=>{ follow=false; });
@@ -777,14 +829,18 @@ document.addEventListener('click', e=>{
   }
 });
 function dot(color){ return L.divIcon({className:'',html:`<div style="width:18px;height:18px;border-radius:50%;background:${color};border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.6)"></div>`,iconSize:[18,18],iconAnchor:[9,9]}); }
-function renderMap(){
+function renderMap(fit){
   if(!map) return; markerLayer.clearLayers();
   const pts=leads.filter(l=>l.coords);
+  const batch=[];
   pts.forEach(l=>{
-    const m=L.marker([l.coords.lat,l.coords.lng],{icon:dot(l.source==='foreclosure'?'#FB923C':'#10B981')}).addTo(markerLayer);
+    const m=L.marker([l.coords.lat,l.coords.lng],{icon:dot(l.source==='foreclosure'?'#FB923C':(l.source==='driving'?'#10B981':'#22D3EE'))});
     m.bindPopup(`<div class="pin-pop"><b>${esc(l.address)}</b><span class="pp-sub">${l.owner?esc(l.owner)+' · ':''}${l.status}${l.saleDate?' · '+esc(l.saleDate):''}</span><button onclick="openModal('${l.id}')">Open lead</button></div>`);
+    batch.push(m);
   });
-  if(pts.length && !(follow && curPos)){ try{ map.fitBounds(L.latLngBounds(pts.map(l=>[l.coords.lat,l.coords.lng])).pad(0.3),{maxZoom:16}); }catch(e){} }
+  if(markerLayer.addLayers) markerLayer.addLayers(batch); else batch.forEach(m=>markerLayer.addLayer(m));
+  // Only auto-fit on explicit request (e.g. just after an import) and when not actively following GPS.
+  if(fit && pts.length && !(follow && curPos)){ try{ map.fitBounds(L.latLngBounds(pts.map(l=>[l.coords.lat,l.coords.lng])).pad(0.2),{maxZoom:15}); }catch(e){} }
 }
 window.showOnMap=function(id){ switchView('mapView'); const l=leads.find(x=>x.id===id); if(l&&l.coords&&map) setTimeout(()=>map.setView([l.coords.lat,l.coords.lng],17),140); };
 
@@ -860,24 +916,42 @@ function importCSVText(text){
   return {leads:out, mapped:Object.keys(map)};
 }
 document.getElementById('importCsv').addEventListener('click', ()=>document.getElementById('csvFile').click());
+const _lb=document.getElementById('locateAll'); if(_lb) _lb.addEventListener('click',()=>{
+  const missing=leads.filter(l=>!l.coords&&l.address);
+  if(!missing.length){ toast("Every lead is already mapped ✓"); return; }
+  // prioritize whatever is currently filtered/searched so the area she's working maps first
+  const inView=new Set(leads.filter(leadMatch).map(l=>l.id));
+  const ordered=missing.slice().sort((a,b)=>(inView.has(b.id)?1:0)-(inView.has(a.id)?1:0));
+  toast(`Mapping ${missing.length.toLocaleString()} leads… you can keep working`);
+  bulkGeocode(ordered);
+});
 document.getElementById('csvFile').addEventListener('change', e=>{
   const file=e.target.files[0]; if(!file) return;
+  toast("Reading "+file.name+"…");
   const reader=new FileReader();
   reader.onload=ev=>{
     let res; try{ res=importCSVText(ev.target.result); }catch(err){ toast("Couldn't read that CSV","err"); return; }
     if(!res.leads.length){ toast("No property addresses found in that file","err"); return; }
     if(res.mapped.indexOf('address')===-1){ toast("Couldn't find an address column","err"); return; }
-    let added=0; const needGeo=[];
-    res.leads.forEach(p=>{
-      if(leads.some(l=>l.address.toLowerCase()===p.address.toLowerCase())) return;
+    // Fast dedup: Set of normalized addresses (existing + within this batch). O(n), not O(n^2).
+    const seen=new Set(leads.map(l=>(l.address||'').toLowerCase()));
+    const fresh=[], needGeo=[];
+    for(const p of res.leads){
+      const key=(p.address||'').toLowerCase(); if(!key||seen.has(key)) continue; seen.add(key);
       const lead={ id:uid(), address:p.address, status:p.status||"New", owner:p.owner||"", mailing:p.mailing||"",
         phone:p.phone||"", email:p.email||"", saleDate:p.saleDate||"", county:p.county||"",
-        notes:(p.notes||"")||(p.email?("✉ "+p.email):""), coords:p.coords||null, source:(p.status==="Foreclosure"?"foreclosure":"import"), created:new Date().toISOString() };
-      leads.unshift(lead); added++; if(!lead.coords) needGeo.push(lead);
-    });
-    save(); render(); switchView('listView');
-    toast(`Imported ${added} lead${added===1?'':'s'} ✓${needGeo.length?` · mapping ${needGeo.length}`:''}`);
-    if(needGeo.length) geocodeQueue(needGeo);
+        notes:(p.notes||"")||(p.email?("✉ "+p.email):""), coords:p.coords||null,
+        source:(p.status==="Foreclosure"?"foreclosure":"import"), created:new Date().toISOString() };
+      fresh.push(lead); if(!lead.coords) needGeo.push(lead);
+    }
+    if(!fresh.length){ toast("Those leads are already imported","err"); return; }
+    leads=fresh.concat(leads); // prepend whole batch in one O(n) op
+    save();
+    render();
+    switchView('mapView'); setTimeout(()=>{ if(map){ map.invalidateSize(); renderMap(true); } },160);
+    const pinned=fresh.length-needGeo.length;
+    toast(`Imported ${fresh.length.toLocaleString()} ✓ · ${pinned.toLocaleString()} pinned`+(needGeo.length?` · ${Math.min(needGeo.length,GEO_CAP)} locating`:''));
+    if(needGeo.length) bulkGeocode(needGeo);
   };
   reader.readAsText(file); e.target.value='';
 });

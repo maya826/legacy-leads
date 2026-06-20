@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0B1120">
+<title>Legacy Leads</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/esri-leaflet/3.0.12/esri-leaflet.min.js"></script>
+<style>
+  :root{
+    --bg:#0B1120; --bg2:#0F1729; --panel:#151D31; --panel-2:#1C2740; --panel-3:#243150;
+    --line:rgba(255,255,255,.07); --line-2:rgba(255,255,255,.12);
+    --text:#F8FAFC; --muted:#8B97AE; --muted-2:#5D6982;
+    --brand:#10B981; --brand-d:#059669; --brand-glow:rgba(16,185,129,.45);
+    --fc:#FB923C; --fc-d:#EA580C; --fc-glow:rgba(251,146,60,.4);
+    --blue:#38BDF8; --purple:#A78BFA; --red:#F87171; --amber:#FBBF24;
+    --radius:18px; --radius-s:12px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none;}
+  html,body{margin:0;height:100%;}
+  body{
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+    color:var(--text); height:100vh; overflow:hidden; display:flex; flex-direction:column;
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(16,185,129,.10), transparent 60%),
+      radial-gradient(900px 500px at -10% 10%, rgba(56,189,248,.07), transparent 55%),
+      var(--bg);
+    letter-spacing:-.01em;
+  }
+  ::-webkit-scrollbar{width:0;height:0;}
+
+  /* Header */
+  header{
+    padding:14px 18px 13px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:space-between;
+    background:linear-gradient(180deg, rgba(21,29,49,.9), rgba(21,29,49,.55)); backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand .mark{
+    width:34px; height:34px; border-radius:10px; flex-shrink:0;
+    background:linear-gradient(135deg, var(--brand), #34D399); position:relative;
+    box-shadow:0 4px 14px var(--brand-glow); display:flex; align-items:center; justify-content:center;
+  }
+  .brand .mark svg{width:19px; height:19px; color:#04210f;}
+  .brand h1{font-size:17px; font-weight:800; margin:0; line-height:1;}
+  .brand .sub{font-size:10.5px; color:var(--muted); font-weight:600; letter-spacing:.02em; margin-top:3px;}
+  .pill{
+    font-size:12px; color:var(--text); font-weight:700; padding:7px 13px; border-radius:30px;
+    background:var(--panel-2); border:1px solid var(--line-2); display:flex; align-items:center; gap:6px;
+  }
+  .pill .dot{width:7px;height:7px;border-radius:50%;background:var(--brand);box-shadow:0 0 8px var(--brand);}
+
+  .views{flex:1; position:relative; overflow:hidden;}
+  .view{position:absolute; inset:0; overflow-y:auto; -webkit-overflow-scrolling:touch; display:none; animation:fade .25s ease;}
+  .view.active{display:block;}
+  @keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  #map{width:100%; height:100%; background:var(--bg2);}
+
+  /* Bottom nav */
+  nav{
+    display:flex; gap:6px; padding:8px 10px calc(8px + env(safe-area-inset-bottom)); flex-shrink:0;
+    background:linear-gradient(0deg, rgba(11,17,32,.96), rgba(21,29,49,.85)); backdrop-filter:blur(14px);
+    border-top:1px solid var(--line);
+  }
+  nav button{
+    flex:1; background:transparent; border:none; color:var(--muted-2); padding:8px 0 7px;
+    font-size:10.5px; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:5px;
+    border-radius:14px; transition:.18s;
+  }
+  nav button svg{width:22px;height:22px; transition:.18s;}
+  nav button.active{color:var(--brand); background:rgba(16,185,129,.10);}
+  nav button.active svg{transform:translateY(-1px); filter:drop-shadow(0 3px 6px var(--brand-glow));}
+
+  /* FAB */
+  .fab-wrap{position:absolute; bottom:20px; left:0; right:0; display:flex; justify-content:center; z-index:1000; pointer-events:none;}
+  .fab{
+    pointer-events:auto; border:none; border-radius:50px; padding:0; cursor:pointer;
+    background:linear-gradient(135deg, var(--brand), #34D399); color:#04210f;
+    box-shadow:0 10px 30px var(--brand-glow), inset 0 1px 0 rgba(255,255,255,.3);
+    display:flex; align-items:center; gap:10px; padding:15px 26px; font-size:16px; font-weight:800; letter-spacing:-.02em;
+  }
+  .fab:active{transform:scale(.95);}
+  .fab svg{width:20px;height:20px;}
+
+  /* Toolbar / segmented */
+  .toolbar{display:flex; gap:9px; padding:14px 16px 4px;}
+  .btn{
+    flex:1; border:none; padding:13px; border-radius:var(--radius-s); font-size:13.5px; font-weight:700; font-family:inherit;
+    background:var(--panel-2); color:var(--text); border:1px solid var(--line-2); display:flex; align-items:center; justify-content:center; gap:7px;
+  }
+  .btn svg{width:16px;height:16px;}
+  .btn.primary{background:linear-gradient(135deg, var(--brand), var(--brand-d)); color:#04210f; border:none; box-shadow:0 6px 18px var(--brand-glow);}
+  .btn:active{transform:scale(.98);}
+
+  /* Stats strip */
+  .stats{display:flex; gap:9px; padding:12px 16px 2px;}
+  .stat{flex:1; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px 13px;}
+  .stat .n{font-size:22px; font-weight:800; line-height:1;}
+  .stat .l{font-size:11px; color:var(--muted); font-weight:600; margin-top:5px;}
+  .stat.fc .n{color:var(--fc);} .stat.drive .n{color:var(--brand);} .stat.hot .n{color:var(--amber);}
+
+  /* Lead list */
+  .list-wrap{padding:10px 16px 110px;}
+  .empty{text-align:center; color:var(--muted); padding:46px 26px;}
+  .empty .ico{width:60px;height:60px;border-radius:18px;background:var(--panel);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
+  .empty .ico svg{width:28px;height:28px;color:var(--muted-2);}
+  .empty h3{margin:0 0 7px; font-size:16px; color:var(--text); font-weight:700;}
+  .empty p{margin:0; font-size:13.5px; line-height:1.6;}
+  .empty b{color:var(--brand);}
+
+  .lead{
+    background:linear-gradient(180deg, var(--panel), var(--bg2));
+    border:1px solid var(--line); border-radius:var(--radius); padding:15px; margin-bottom:11px;
+    box-shadow:0 2px 10px rgba(0,0,0,.25); position:relative; overflow:hidden;
+  }
+  .lead.fc::before{content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(180deg,var(--fc),var(--fc-d));}
+  .lead.drive::before{content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(180deg,var(--brand),var(--brand-d));}
+  .lead-head{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .lead-addr{font-weight:700; font-size:15.5px; line-height:1.3; letter-spacing:-.02em;}
+  .lead-meta{display:flex; flex-wrap:wrap; gap:6px 12px; margin-top:8px;}
+  .lead-meta span{font-size:12px; color:var(--muted); display:inline-flex; align-items:center; gap:5px;}
+  .lead-meta svg{width:13px;height:13px;opacity:.8;}
+  .lead-note{font-size:12px; color:var(--muted); margin-top:7px; padding-top:8px; border-top:1px solid var(--line); line-height:1.45;}
+  .locating{font-size:11.5px; color:var(--amber); display:inline-flex; align-items:center; gap:6px; margin-top:7px;}
+  .locating .spin{width:11px;height:11px;border:2px solid rgba(251,191,36,.3);border-top-color:var(--amber);border-radius:50%;animation:spin .7s linear infinite;}
+
+  .badge{font-size:10.5px; font-weight:800; padding:4px 10px; border-radius:30px; white-space:nowrap; letter-spacing:.01em;}
+  .b-New{background:rgba(56,189,248,.16); color:#7DD3FC;}
+  .b-Foreclosure{background:rgba(251,146,60,.18); color:#FDBA74;}
+  .b-Vacant{background:rgba(251,191,36,.16); color:#FCD34D;}
+  .b-Distressed{background:rgba(248,113,113,.16); color:#FCA5A5;}
+  .b-Absentee{background:rgba(167,139,250,.18); color:#C4B5FD;}
+  .b-Contacted{background:rgba(16,185,129,.18); color:#6EE7B7;}
+  .b-Pass{background:rgba(148,163,184,.14); color:#CBD5E1;}
+
+  .lead-actions{display:flex; gap:8px; margin-top:13px;}
+  .lead-actions button, .lead-actions a{
+    flex:1; border:none; padding:10px; border-radius:11px; font-size:12.5px; font-weight:700; font-family:inherit;
+    text-align:center; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:6px;
+    background:var(--panel-2); color:var(--text); border:1px solid var(--line-2);
+  }
+  .lead-actions svg{width:14px;height:14px;}
+  .lead-actions a.trace{background:rgba(16,185,129,.14); color:#6EE7B7; border-color:rgba(16,185,129,.25);}
+  .lead-actions button.del{background:rgba(248,113,113,.12); color:#FCA5A5; border-color:rgba(248,113,113,.22); flex:0 0 44px;}
+  .lead-actions button:active, .lead-actions a:active{transform:scale(.97);}
+
+  /* Foreclosure tab */
+  .fc-wrap{padding:16px 16px 110px;}
+  .hero{
+    background:linear-gradient(135deg, rgba(251,146,60,.16), rgba(234,88,12,.06));
+    border:1px solid rgba(251,146,60,.22); border-radius:var(--radius); padding:18px; margin-bottom:14px;
+  }
+  .hero h2{margin:0 0 6px; font-size:19px; font-weight:800; letter-spacing:-.02em;}
+  .hero p{margin:0; font-size:13px; color:var(--muted); line-height:1.55;}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:14px;}
+  .card-h{display:flex; align-items:center; gap:10px; margin-bottom:13px;}
+  .card-h .step{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--fc),var(--fc-d));color:#3f1d1d;font-weight:900;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .card-h h3{margin:0; font-size:15px; font-weight:700;}
+  .card-h p{margin:2px 0 0; font-size:11.5px; color:var(--muted);}
+  .src-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .src{
+    display:flex; align-items:center; gap:10px; text-decoration:none; padding:13px; border-radius:13px; font-weight:700; font-size:13.5px;
+    border:1px solid var(--line-2); background:var(--panel-2); color:var(--text);
+  }
+  .src:active{transform:scale(.98);}
+  .src .tag{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0;}
+  .src.ga .tag{background:#A3E635;color:#1A2E05;} .src.al .tag{background:#FCA5A5;color:#450A0A;}
+  .src.fl .tag{background:#7DD3FC;color:#082F49;} .src.hud .tag{background:#C4B5FD;color:#2E1065;}
+  .aux-links{margin-top:12px; font-size:12px; color:var(--muted); line-height:1.9;}
+  .aux-links a{color:var(--blue); text-decoration:none; font-weight:600; background:rgba(56,189,248,.1); padding:3px 9px; border-radius:8px; margin-right:5px; display:inline-block;}
+  textarea#fcPaste{
+    width:100%; min-height:130px; background:var(--bg2); border:1px solid var(--line-2); color:var(--text);
+    padding:13px; border-radius:13px; font-size:13.5px; font-family:inherit; resize:vertical; line-height:1.5;
+  }
+  textarea#fcPaste:focus{outline:none; border-color:var(--fc); box-shadow:0 0 0 3px var(--fc-glow);}
+  .fc-go{
+    width:100%; margin-top:11px; border:none; padding:15px; border-radius:13px; font-size:15.5px; font-weight:800; font-family:inherit;
+    background:linear-gradient(135deg,var(--fc),var(--fc-d)); color:#3f1d1d; box-shadow:0 8px 22px var(--fc-glow);
+    display:flex; align-items:center; justify-content:center; gap:9px;
+  }
+  .fc-go:active{transform:scale(.98);}
+  .fc-go svg{width:19px;height:19px;}
+  #fcResults .lead{margin-bottom:9px;}
+
+  /* Bottom sheet modal */
+  .sheet-bg{position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(3px); z-index:2000; display:none; align-items:flex-end;}
+  .sheet-bg.show{display:flex; animation:fade .2s;}
+  .sheet{
+    background:var(--bg2); width:100%; border-radius:26px 26px 0 0; padding:8px 18px calc(26px + env(safe-area-inset-bottom));
+    max-height:90vh; overflow-y:auto; border-top:1px solid var(--line-2); box-shadow:0 -10px 40px rgba(0,0,0,.5);
+    animation:slideUp .28s cubic-bezier(.16,1,.3,1);
+  }
+  @keyframes slideUp{from{transform:translateY(100%);} to{transform:none;}}
+  .grab{width:38px;height:4px;border-radius:4px;background:var(--line-2);margin:6px auto 14px;}
+  .sheet h2{margin:0 0 3px; font-size:20px; font-weight:800; letter-spacing:-.02em;}
+  .sheet .gps{font-size:12px; color:var(--muted); margin-bottom:6px; display:flex; align-items:center; gap:6px;}
+  label{display:block; font-size:11.5px; color:var(--muted); margin:15px 0 6px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;}
+  input, textarea.f, select{
+    width:100%; background:var(--panel); border:1px solid var(--line-2); color:var(--text);
+    padding:13px; border-radius:12px; font-size:15px; font-family:inherit; transition:.15s;
+  }
+  input:focus, textarea.f:focus{outline:none; border-color:var(--brand); box-shadow:0 0 0 3px var(--brand-glow);}
+  textarea.f{resize:vertical; min-height:62px;}
+  .status-row{display:flex; flex-wrap:wrap; gap:8px;}
+  .chip{background:var(--panel); border:1px solid var(--line-2); color:var(--muted); padding:9px 14px; border-radius:30px; font-size:13px; font-weight:700;}
+  .chip.sel{background:linear-gradient(135deg,var(--brand),var(--brand-d)); color:#04210f; border-color:transparent;}
+  .trace-links{display:flex; flex-wrap:wrap; gap:8px;}
+  .trace-links a{flex:1; min-width:74px; text-align:center; background:rgba(16,185,129,.13); color:#6EE7B7; padding:11px; border-radius:11px; font-size:12.5px; font-weight:700; text-decoration:none; border:1px solid rgba(16,185,129,.22);}
+  .sheet-btns{display:flex; gap:10px; margin-top:22px;}
+  .sheet-btns button{flex:1; padding:15px; border-radius:13px; border:none; font-size:15px; font-weight:800; font-family:inherit;}
+  .sheet-btns .save{background:linear-gradient(135deg,var(--brand),var(--brand-d)); color:#04210f; box-shadow:0 6px 18px var(--brand-glow); flex:2;}
+  .sheet-btns .cancel{background:var(--panel-2); color:var(--text); border:1px solid var(--line-2);}
+
+  .toast{
+    position:fixed; bottom:96px; left:50%; transform:translateX(-50%) translateY(10px);
+    background:var(--panel-3); border:1px solid var(--line-2); color:var(--text); padding:13px 20px; border-radius:30px;
+    font-size:13.5px; font-weight:700; z-index:3000; opacity:0; transition:.3s; pointer-events:none; max-width:90%; text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,.4);
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .toast.ok{border-color:rgba(16,185,129,.4);} .toast.err{border-color:rgba(248,113,113,.45); color:#FCA5A5;}
+
+  .leaflet-popup-content-wrapper{background:var(--panel); color:var(--text); border-radius:14px; box-shadow:0 8px 30px rgba(0,0,0,.5);}
+  .leaflet-popup-tip{background:var(--panel);}
+  .leaflet-popup-content{font-size:13px; margin:13px 15px;}
+  .pin-pop b{display:block; margin-bottom:4px; font-size:14px;}
+  .pin-pop .pp-sub{color:var(--muted); font-size:12px;}
+  .pin-pop button{margin-top:9px; background:linear-gradient(135deg,var(--brand),var(--brand-d)); border:none; color:#04210f; padding:8px 14px; border-radius:9px; font-weight:800; font-family:inherit; width:100%;}
+  .leaflet-control-zoom a{background:var(--panel)!important; color:var(--text)!important; border-color:var(--line)!important;}
+  .leaflet-bar{border:none!important; box-shadow:0 4px 14px rgba(0,0,0,.4)!important;}
+
+  /* live driving map */
+  .me{width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
+  .me-core{width:15px;height:15px;border-radius:50%;background:#38BDF8;border:3px solid #fff;box-shadow:0 0 0 0 rgba(56,189,248,.5);animation:pulse 1.7s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(56,189,248,.5)}70%{box-shadow:0 0 0 18px rgba(56,189,248,0)}100%{box-shadow:0 0 0 0 rgba(56,189,248,0)}}
+  .map-hint{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:800;background:rgba(21,29,49,.92);border:1px solid var(--line-2);color:var(--text);font-size:12px;font-weight:600;padding:8px 15px;border-radius:30px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.45);backdrop-filter:blur(6px);}
+  .map-ctrls{position:absolute;right:14px;bottom:100px;z-index:800;display:flex;flex-direction:column;gap:10px;}
+  .mctrl{width:46px;height:46px;border-radius:14px;background:var(--panel);border:1px solid var(--line-2);color:var(--text);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.45);}
+  .mctrl:active{transform:scale(.94);}
+  .mctrl svg{width:22px;height:22px;}
+  .mctrl.on{background:linear-gradient(135deg,var(--brand),var(--brand-d));color:#04210f;border-color:transparent;}
+  .live-badge{position:absolute;top:14px;left:14px;z-index:800;background:rgba(16,185,129,.18);border:1px solid rgba(16,185,129,.45);color:#6EE7B7;font-size:11px;font-weight:800;padding:6px 11px;border-radius:30px;letter-spacing:.04em;}
+  .filterbar{display:flex; gap:8px; padding:12px 16px 0;}
+  .filterbar input{flex:1; background:var(--panel); border:1px solid var(--line-2); color:var(--text); padding:11px 13px; border-radius:11px; font-size:14px; font-family:inherit;}
+  .filterbar input:focus{outline:none; border-color:var(--brand); box-shadow:0 0 0 3px var(--brand-glow);}
+  .clearbtn{background:var(--panel-2); border:1px solid var(--line-2); color:var(--red); border-radius:11px; padding:0 13px; display:flex; align-items:center;}
+  .chips{display:flex; gap:7px; padding:10px 16px 0; overflow-x:auto;}
+  .chips::-webkit-scrollbar{display:none;}
+  .fchip{flex:0 0 auto; background:var(--panel); border:1px solid var(--line-2); color:var(--muted); padding:7px 13px; border-radius:30px; font-size:12.5px; font-weight:700; white-space:nowrap; font-family:inherit;}
+  .fchip.sel{background:linear-gradient(135deg,var(--brand),var(--brand-d)); color:#04210f; border-color:transparent;}
+  .lead-photo{width:100%; height:150px; object-fit:cover; border-radius:12px; margin-bottom:12px; border:1px solid var(--line);}
+  .photo-row{display:flex; gap:10px; align-items:center;}
+  .photo-thumb{width:58px;height:58px;border-radius:10px;object-fit:cover;border:1px solid var(--line-2);}
+  .photo-btn{flex:1; background:var(--panel); border:1px dashed var(--line-2); color:var(--muted); padding:13px; border-radius:12px; font-weight:600; font-family:inherit; font-size:13px;}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
+    <div>
+      <h1>Legacy Leads</h1>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 9</div>
+    </div>
+  </div>
+  <div class="pill" id="count"><span class="dot"></span>0</div>
+</header>
+
+<div class="views">
+  <!-- LEADS -->
+  <div class="view active" id="listView">
+    <div class="stats">
+      <div class="stat fc"><div class="n" id="sFc">0</div><div class="l">Foreclosures</div></div>
+      <div class="stat drive"><div class="n" id="sDrive">0</div><div class="l">Driving</div></div>
+      <div class="stat hot"><div class="n" id="sHot">0</div><div class="l">Need phone</div></div>
+    </div>
+    <div class="toolbar">
+      <button class="btn primary" id="addManual"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add</button>
+      <button class="btn" id="importCsv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 9l5-5 5 5M12 4v12"/></svg>Import</button>
+      <button class="btn" id="exportCsv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Export</button>
+      <input type="file" id="csvFile" accept=".csv,text/csv" style="display:none">
+    </div>
+    <div class="filterbar">
+      <input id="leadSearch" placeholder="Search address or owner…" autocomplete="off">
+      <button class="clearbtn" id="clearLeads" title="Clear shown leads"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+    </div>
+    <div class="chips" id="filterChips"></div>
+    <div class="list-wrap" id="leadList"></div>
+  </div>
+
+  <!-- FORECLOSURES -->
+  <div class="view" id="fcView">
+    <div class="fc-wrap">
+      <div class="hero">
+        <h2>Pull real foreclosures</h2>
+        <p>Free public-record foreclosure notices for Georgia, Alabama &amp; Florida — auto-extracted into mapped leads with owner names.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div class="step">1</div><div><h3>Open a live foreclosure list</h3><p>Pick your county on the site, then select-all &amp; copy</p></div></div>
+        <div class="src-grid">
+          <a class="src ga" href="https://www.georgiapublicnotice.com/Search.aspx?keywords=foreclosure" target="_blank" rel="noopener"><span class="tag">GA</span>Georgia</a>
+          <a class="src al" href="https://www.alabamapublicnotices.com/Search.aspx?keywords=foreclosure" target="_blank" rel="noopener"><span class="tag">AL</span>Alabama</a>
+          <a class="src fl" href="https://floridapublicnotices.com/" target="_blank" rel="noopener"><span class="tag">FL</span>Florida</a>
+          <a class="src hud" href="https://www.hudhomestore.gov/Listing/PropertySearch.aspx" target="_blank" rel="noopener"><span class="tag">HUD</span>HUD Homes</a>
+        </div>
+        <div class="aux-links">FL county auction sale lists:
+          <a href="https://www.myorangeclerk.realforeclose.com/" target="_blank" rel="noopener">Orange</a>
+          <a href="https://www.osceola.realforeclose.com/" target="_blank" rel="noopener">Osceola</a>
+          <a href="https://www.duval.realforeclose.com/" target="_blank" rel="noopener">Duval</a>
+          <a href="https://www.hillsborough.realforeclose.com/" target="_blank" rel="noopener">Hillsborough</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div class="step">2</div><div><h3>Paste &amp; extract</h3><p>Engine pulls address, owner, county &amp; sale date</p></div></div>
+        <textarea id="fcPaste" placeholder="Paste the copied foreclosure notices here…"></textarea>
+        <button class="fc-go" id="fcParse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Extract &amp; map leads</button>
+      </div>
+
+      <div class="card" id="fcResultCard" style="display:none">
+        <div class="card-h"><div class="step" style="background:linear-gradient(135deg,var(--brand),var(--brand-d));color:#04210f">✓</div><div><h3 id="fcResultTitle">Parsed</h3><p>Saved to Leads · pins drop on Map automatically</p></div></div>
+        <div id="fcResults"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div class="view" id="mapView">
+    <div id="map"></div>
+    <div class="live-badge" id="liveBadge" style="display:none">● LIVE</div>
+    <div class="map-hint" id="mapHint">Tap a house on the map to add it</div>
+    <div class="map-ctrls">
+      <button class="mctrl" id="recenterBtn" title="Recenter on me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3.5M12 18.5V22M2 12h3.5M18.5 12H22"/></svg></button>
+      <button class="mctrl" id="routeBtn" title="Track my route"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2.2"/><circle cx="18" cy="5" r="2.2"/><path d="M8.2 18C15 17 3 7 16 6"/></svg></button>
+      <button class="mctrl on" id="parcelBtn" title="Lot lines"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3zM3 9h18M3 15h18M9 3v18M15 3v18"/></svg></button>
+    </div>
+  </div>
+
+  <div class="fab-wrap" id="fabWrap">
+    <button class="fab" id="captureBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg>
+      Capture
+    </button>
+  </div>
+</div>
+
+<nav>
+  <button class="active" data-view="listView">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v16"/></svg>Leads
+  </button>
+  <button data-view="fcView">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/><path d="M9 9v.01M9 13v.01M9 17v.01"/></svg>Foreclosures
+  </button>
+  <button data-view="mapView">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><path d="M8 2v16M16 6v16"/></svg>Map
+  </button>
+</nav>
+
+<!-- SHEET -->
+<div class="sheet-bg" id="modalBg">
+  <div class="sheet">
+    <div class="grab"></div>
+    <h2 id="modalTitle">Property</h2>
+    <div class="gps" id="modalGps"></div>
+    <label>Property address</label>
+    <input id="fAddress" placeholder="123 Main St, City, ST">
+    <label>Status</label>
+    <div class="status-row" id="statusRow"></div>
+    <label>Owner name</label>
+    <input id="fOwner" placeholder="From notice, or look up">
+    <label>Find phone — best-effort &amp; manual</label>
+    <div class="trace-links" id="traceLinks"></div>
+    <label>Owner phone</label>
+    <input id="fPhone" type="tel" placeholder="Paste the number you found">
+    <label>Owner mailing address</label>
+    <input id="fMailing" placeholder="If different from property">
+    <label>Sale date</label>
+    <input id="fSaleDate" placeholder="Auction date, if any">
+    <label>Notes</label>
+    <textarea class="f" id="fNotes" placeholder="Condition, source, etc."></textarea>
+    <label>Photo</label>
+    <div class="photo-row">
+      <img id="fPhotoThumb" class="photo-thumb" style="display:none" alt="">
+      <button type="button" class="photo-btn" id="fPhotoBtn">📷 Add / take photo</button>
+      <input type="file" id="fPhotoInput" accept="image/*" capture="environment" style="display:none">
+    </div>
+    <div class="sheet-btns">
+      <button class="cancel" id="modalCancel">Cancel</button>
+      <button class="save" id="modalSave">Save lead</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STATUSES = ["New","Foreclosure","Vacant","Distressed","Absentee","Contacted","Pass"];
+const KEY = "legacyleads_v2";
+let leads = load();
+let editingId = null, pendingCoords = null, modalStatus = "New", leadFilter='all', leadSearch='', pendingPhoto='';
+let map, markerLayer;
+
+function load(){ try{ return JSON.parse(localStorage.getItem(KEY)) || []; }catch(e){ return []; } }
+function save(){ localStorage.setItem(KEY, JSON.stringify(leads)); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function toast(msg, kind){ const t=document.getElementById('toast'); t.textContent=msg; t.className='toast show '+(kind||'ok'); clearTimeout(t._t); t._t=setTimeout(()=>{t.className='toast '+(kind||'ok');},2800); }
+function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function fmtDate(iso){ try{ const d=new Date(iso); return d.toLocaleDateString([],{month:'short',day:'numeric'}); }catch(e){ return ''; } }
+const ICN={pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>',
+  user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>',
+  phone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.5-1.1a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2Z"/></svg>',
+  edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+  map:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>'};
+
+/* skip-trace deep links */
+function traceUrls(owner, address){
+  const o=encodeURIComponent((owner||'').trim());
+  const oa=encodeURIComponent(((owner||'')+' '+(address||'')).trim());
+  return [
+    {label:'Google', url:`https://www.google.com/search?q=${oa}+phone`},
+    {label:'TruePeople', url:`https://www.truepeoplesearch.com/results?name=${o}`},
+    {label:'FastPeople', url:`https://www.fastpeoplesearch.com/name/${(owner||'').trim().replace(/\s+/g,'-').toLowerCase()}`},
+    {label:'Whitepages', url:`https://www.whitepages.com/name/${(owner||'').trim().replace(/\s+/g,'-')}`}
+  ];
+}
+
+/* live location tracking + capture (DealMachine-style) */
+let curPos=null, watchId=null, userMark=null, accCircle=null, follow=true, routeOn=false, routePts=[], routeLine=null;
+function setLive(on){ const b=document.getElementById('liveBadge'); if(b) b.style.display=on?'block':'none'; }
+function onceGPS(){ return new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(p=>res({lat:p.coords.latitude,lng:p.coords.longitude,accuracy:p.coords.accuracy}),rej,{enableHighAccuracy:true,timeout:12000,maximumAge:0})); }
+function startTracking(){
+  if(!navigator.geolocation||watchId!==null) return;
+  watchId=navigator.geolocation.watchPosition(p=>{
+    const {latitude:lat,longitude:lng,accuracy}=p.coords; curPos={lat,lng,accuracy}; setLive(true);
+    if(!map) return;
+    if(!userMark){ userMark=L.marker([lat,lng],{icon:L.divIcon({className:'',html:'<div class="me"><div class="me-core"></div></div>',iconSize:[22,22],iconAnchor:[11,11]}),zIndexOffset:1000,interactive:false}).addTo(map); }
+    else userMark.setLatLng([lat,lng]);
+    if(!accCircle){ accCircle=L.circle([lat,lng],{radius:accuracy,color:'#38BDF8',weight:1,fillColor:'#38BDF8',fillOpacity:.1,interactive:false}).addTo(map); }
+    else { accCircle.setLatLng([lat,lng]); accCircle.setRadius(accuracy); }
+    if(routeOn){ const last=routePts[routePts.length-1]; if(!last||last[0]!==lat||last[1]!==lng) routePts.push([lat,lng]); if(!routeLine){ routeLine=L.polyline(routePts,{color:'#10B981',weight:5,opacity:.85,interactive:false}).addTo(map);} else routeLine.setLatLngs(routePts); }
+    if(follow) map.setView([lat,lng], Math.max(map.getZoom()||16,16));
+  }, err=>{ setLive(false); if(err.code===1) toast("Location denied — enable it in your browser settings","err"); }, {enableHighAccuracy:true,maximumAge:2000,timeout:20000});
+}
+async function captureHere(){
+  let pos=curPos;
+  if(!pos){ toast("Getting your location…"); try{ pos=await onceGPS(); curPos=pos; startTracking(); }catch(e){ toast("Couldn't get location — allow location access","err"); return; } }
+  pendingCoords={lat:pos.lat,lng:pos.lng,accuracy:pos.accuracy};
+  let address=""; try{ address=await reverseGeocode(pos.lat,pos.lng);}catch(e){}
+  openModal(null,{address});
+}
+document.getElementById('captureBtn').addEventListener('click', captureHere);
+document.getElementById('recenterBtn').addEventListener('click', ()=>{ follow=true; startTracking(); if(curPos&&map) map.setView([curPos.lat,curPos.lng],17); });
+document.getElementById('routeBtn').addEventListener('click', ()=>{
+  routeOn=!routeOn; document.getElementById('routeBtn').classList.toggle('on',routeOn);
+  if(routeOn){ startTracking(); if(curPos) routePts.push([curPos.lat,curPos.lng]); toast("Route tracking on 🟢"); }
+  else { toast("Route paused"); }
+});
+async function reverseGeocode(lat,lng){
+  const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,{headers:{'Accept':'application/json'}}); if(!r.ok) throw 0;
+  const d=await r.json(), a=d.address||{};
+  const num=a.house_number||"", road=a.road||a.pedestrian||a.footway||"";
+  const city=a.city||a.town||a.village||a.hamlet||a.suburb||"";
+  const st=a.state_code||a.state||"", zip=a.postcode||"";
+  return [[num,road].filter(Boolean).join(" "), city, [st,zip].filter(Boolean).join(" ")].filter(Boolean).join(", ") || d.display_name || "";
+}
+async function forwardGeocode(address){
+  try{
+    const cu=`https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?benchmark=Public_AR_Current&format=json&address=${encodeURIComponent(address)}`;
+    const cj=await (await fetch(cu)).json();
+    const m=cj.result&&cj.result.addressMatches&&cj.result.addressMatches[0];
+    if(m&&m.coordinates&&m.coordinates.y) return {lat:m.coordinates.y, lng:m.coordinates.x};
+  }catch(e){}
+  try{
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=us&q=${encodeURIComponent(address)}`,{headers:{'Accept':'application/json'}});
+    const d=await r.json(); if(d.length) return {lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon)};
+  }catch(e){}
+  return null;
+}
+
+/* Parser */
+function parseNotices(text){
+  if(!text) return [];
+  let T=text.replace(/\r/g,' ').replace(/ /g,' ');
+  const STREET="(?:St|Street|Ave|Avenue|Rd|Road|Dr|Drive|Ln|Lane|Ct|Court|Blvd|Boulevard|Way|Cir|Circle|Pl|Place|Ter|Terrace|Trl|Trail|Pkwy|Parkway|Hwy|Highway|Loop|Run|Pass|Path|Pt|Point|Cv|Cove|Sq|Square|Walk|Row|Xing|Crossing)";
+  const DIR="(?:\\s+(?:NE|NW|SE|SW|N|S|E|W))?";
+  const addrRe=new RegExp("(\\d{1,6}\\s+(?:[NSEW]\\.?\\s+)?[A-Za-z0-9'.\\- ]{2,40}?\\s"+STREET+"\\.?"+DIR+"(?:\\s*(?:#|Apt|Unit|Ste)\\.?\\s*[A-Za-z0-9-]+)?)\\s*,?\\s*([A-Za-z .'\\-]{2,30}?)\\s*,?\\s*(FL|GA|AL|Florida|Georgia|Alabama)\\s*\\.?,?\\s*(\\d{5})","gi");
+  const boundRe=/(IN THE CIRCUIT COURT OF|NOTICE OF SALE UNDER POWER|MORTGAGE FORECLOSURE SALE|NOTICE OF MORTGAGE FORECLOSURE)/gi;
+  const bounds=[]; let bm; while((bm=boundRe.exec(T))!==null) bounds.push(bm.index);
+  const lastBound=i=>{let b=0; for(const x of bounds){ if(x<=i&&x>b) b=x; } return b;};
+  const seen=new Set(), out=[]; let m, prevEnd=0;
+  while((m=addrRe.exec(T))!==null){
+    const street=clean(m[1]);
+    const city=clean(m[2]).replace(/^(?:of|in|at|known as|a\/k\/a|aka|address)\s+/i,'');
+    const state={FLORIDA:'FL',GEORGIA:'GA',ALABAMA:'AL'}[m[3].toUpperCase()]||m[3].toUpperCase();
+    const full=`${street}, ${city}, ${state} ${m[4]}`;
+    const key=full.toLowerCase().replace(/\s+/g,' ');
+    const start=Math.max(prevEnd, lastBound(m.index), m.index-1900);
+    const ctx=T.slice(start, m.index+60); prevEnd=m.index+m[0].length;
+    if(seen.has(key)) continue; seen.add(key);
+    out.push({address:full, owner:extractOwner(ctx), county:extractCounty(ctx), saleDate:extractSaleDate(ctx)});
+  }
+  return out;
+}
+function clean(s){ return (s||'').replace(/\s+/g,' ').trim().replace(/[.,;:]+$/,''); }
+function cleanName(s){ s=clean(s).replace(/\b(Defendant|Defendants|Plaintiff|et al|et\. al|Respondent|an individual|individually|unmarried|a single (?:man|woman))\b.*$/i,'').replace(/[,;]+$/,'').trim(); return (s.length<3||s.length>60)?"":s; }
+function extractOwner(ctx){
+  let m=ctx.match(/\bv(?:s|s\.|\.)\s+([A-Z][A-Za-z.'\- ]{2,60}?)(?:,|;|\s+(?:a\/k\/a|et al|et\. al|Defendant|Defendants|and\b|UNKNOWN))/);
+  if(m) return cleanName(m[1]);
+  m=ctx.match(/(?:executed by|granted by|made by|given by)\s+([A-Z][A-Za-z.'\- ]{2,60}?)(?:,|\s+(?:to|in favor|dated|a\/k\/a|and wife|husband|an unmarried|a married|a single))/);
+  if(m) return cleanName(m[1]);
+  m=ctx.match(/mortgag(?:e|or)s?\s+(?:executed by|is|are|:)?\s*([A-Z][A-Za-z.'\- ]{2,50}?)(?:,|;|\s+to\b)/);
+  if(m) return cleanName(m[1]);
+  return "";
+}
+function extractCounty(ctx){
+  let m=ctx.match(/\b(?:IN AND FOR|FOR THE COUNTY OF|COUNTY OF)\s+(?:the\s+)?([A-Z][A-Za-z.\- ]{2,25}?)\s+COUNTY/i);
+  if(m) return clean(m[1]);
+  m=ctx.match(/\b(?:GEORGIA|ALABAMA|FLORIDA),\s*([A-Z][A-Za-z .\-]{2,25}?)\s+COUNTY/i);
+  if(m) return clean(m[1]);
+  m=ctx.match(/courthouse door of\s+([A-Z][A-Za-z.\-]{2,20})\s+County/i)||ctx.match(/\b(?:the\s+)?([A-Z][A-Za-z.\-]{2,20})\s+County\s+Courthouse/i);
+  if(m) return clean(m[1]);
+  m=ctx.match(/\bin\s+([A-Z][A-Za-z.\- ]{2,25}?)\s+County\b/);
+  return m?clean(m[1]):"";
+}
+function extractSaleDate(ctx){
+  let m=ctx.match(/\b(?:on|held on|date of sale[:\s])\s*((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4})/i);
+  if(m) return clean(m[1]);
+  m=ctx.match(/(first\s+\w+day\s+in\s+(?:January|February|March|April|May|June|July|August|September|October|November|December),?\s+\d{4})/i);
+  if(m) return clean(m[1]);
+  m=ctx.match(/((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4})/i);
+  if(m) return clean(m[1]);
+  m=ctx.match(/\b(\d{1,2}\/\d{1,2}\/\d{2,4})\b/);
+  return m?clean(m[1]):"";
+}
+
+/* Parse action */
+document.getElementById('fcParse').addEventListener('click', ()=>{
+  const txt=document.getElementById('fcPaste').value;
+  const parsed=parseNotices(txt);
+  if(!parsed.length){ toast("No property addresses found in that text","err"); return; }
+  let added=0; const newOnes=[];
+  parsed.forEach(p=>{
+    if(leads.some(l=>l.address.toLowerCase()===p.address.toLowerCase())) return;
+    const lead={ id:uid(), address:p.address, status:"Foreclosure", owner:p.owner||"", mailing:"", phone:"",
+      saleDate:p.saleDate||"", county:p.county||"", notes:p.county?("County: "+p.county):"",
+      coords:null, source:"foreclosure", created:new Date().toISOString() };
+    leads.unshift(lead); newOnes.push(lead); added++;
+  });
+  save(); render();
+  const card=document.getElementById('fcResultCard'); card.style.display='block';
+  document.getElementById('fcResultTitle').textContent=`Found ${parsed.length} · added ${added} new`;
+  document.getElementById('fcResults').innerHTML=parsed.map(p=>`
+    <div class="lead fc">
+      <div class="lead-addr">${esc(p.address)}</div>
+      <div class="lead-meta">${p.owner?`<span>${ICN.user}${esc(p.owner)}</span>`:'<span style="color:var(--muted-2)">owner not detected</span>'}${p.saleDate?`<span>${ICN.cal}${esc(p.saleDate)}</span>`:''}${p.county?`<span>${esc(p.county)} Co.</span>`:''}</div>
+    </div>`).join('');
+  document.getElementById('fcPaste').value='';
+  toast(`Added ${added} foreclosure lead${added===1?'':'s'} ✓`);
+  card.scrollIntoView({behavior:'smooth',block:'nearest'});
+  if(newOnes.length) geocodeQueue(newOnes);
+});
+
+let geocoding=false;
+async function geocodeQueue(list){
+  if(geocoding) return; geocoding=true;
+  for(const lead of list){
+    try{ const c=await forwardGeocode(lead.address); if(c){ const t=leads.find(x=>x.id===lead.id); if(t){ t.coords=c; save(); render(); } } }catch(e){}
+    await new Promise(r=>setTimeout(r,1100));
+  }
+  geocoding=false; if(document.getElementById('mapView').classList.contains('active')) renderMap();
+  toast("Map pins updated 📍");
+}
+
+/* Sheet */
+function buildStatusChips(){
+  const row=document.getElementById('statusRow'); row.innerHTML='';
+  STATUSES.forEach(s=>{ const c=document.createElement('button'); c.type='button'; c.className='chip'+(s===modalStatus?' sel':''); c.textContent=s; c.onclick=()=>{modalStatus=s; buildStatusChips();}; row.appendChild(c); });
+}
+function buildTraceLinks(owner,address){ document.getElementById('traceLinks').innerHTML=traceUrls(owner,address).map(t=>`<a href="${t.url}" target="_blank" rel="noopener">${t.label}</a>`).join(''); }
+function openModal(id, prefill){
+  editingId=id; const lead=id?leads.find(l=>l.id===id):null; prefill=prefill||{};
+  document.getElementById('modalTitle').textContent=id?"Edit lead":"New lead";
+  modalStatus=lead?lead.status:(prefill.status||"New");
+  document.getElementById('fAddress').value=lead?lead.address:(prefill.address||"");
+  document.getElementById('fOwner').value=lead?lead.owner:(prefill.owner||"");
+  document.getElementById('fMailing').value=lead?lead.mailing:"";
+  document.getElementById('fPhone').value=lead?lead.phone:"";
+  document.getElementById('fSaleDate').value=lead?(lead.saleDate||""):"";
+  document.getElementById('fNotes').value=lead?lead.notes:""; pendingPhoto=lead?(lead.photo||""):""; { const pt=document.getElementById('fPhotoThumb'); if(pt){ pt.src=pendingPhoto||""; pt.style.display=pendingPhoto?'block':'none'; } }
+  const c=lead?lead.coords:pendingCoords;
+  document.getElementById('modalGps').innerHTML=c?`${ICN.pin} ${c.lat.toFixed(5)}, ${c.lng.toFixed(5)}`+(c.accuracy?` · ±${Math.round(c.accuracy)}m`:""):`${ICN.pin} Will locate from address`;
+  buildStatusChips();
+  buildTraceLinks(document.getElementById('fOwner').value, document.getElementById('fAddress').value);
+  document.getElementById('modalBg').classList.add('show');
+}
+document.getElementById('fOwner').addEventListener('input', e=>buildTraceLinks(e.target.value, document.getElementById('fAddress').value));
+function closeModal(){ document.getElementById('modalBg').classList.remove('show'); editingId=null; pendingCoords=null; }
+document.getElementById('modalCancel').addEventListener('click', closeModal);
+document.getElementById('modalBg').addEventListener('click', e=>{ if(e.target.id==='modalBg') closeModal(); });
+document.getElementById('addManual').addEventListener('click', ()=>{ pendingCoords=null; openModal(null,{}); });
+document.getElementById('modalSave').addEventListener('click', ()=>{
+  const addr=document.getElementById('fAddress').value.trim();
+  if(!addr){ toast("Add an address first","err"); return; }
+  const data={ address:addr, status:modalStatus,
+    owner:document.getElementById('fOwner').value.trim(), mailing:document.getElementById('fMailing').value.trim(),
+    phone:document.getElementById('fPhone').value.trim(), saleDate:document.getElementById('fSaleDate').value.trim(),
+    notes:document.getElementById('fNotes').value.trim(), photo:pendingPhoto };
+  if(editingId){ const l=leads.find(x=>x.id===editingId); const had=l.coords; Object.assign(l,data);
+    save(); render(); closeModal(); toast("Lead updated"); if(!had&&l.source!=='driving') geocodeQueue([l]);
+  }else{
+    const lead={ id:uid(), ...data, coords:pendingCoords, source:pendingCoords?"driving":"manual", created:new Date().toISOString() };
+    leads.unshift(lead); save(); render(); closeModal(); toast("Lead saved ✓"); if(!pendingCoords) geocodeQueue([lead]);
+  }
+});
+
+/* Render */
+function render(){
+  document.getElementById('count').innerHTML=`<span class="dot"></span>${leads.length}`;
+  document.getElementById('sFc').textContent=leads.filter(l=>l.source==='foreclosure').length;
+  document.getElementById('sDrive').textContent=leads.filter(l=>l.source==='driving').length;
+  document.getElementById('sHot').textContent=leads.filter(l=>!l.phone && l.status!=='Pass').length;
+  buildFilterChips();
+  const wrap=document.getElementById('leadList');
+  if(!leads.length){
+    wrap.innerHTML=`<div class="empty"><div class="ico">${ICN.map}</div><h3>No leads yet</h3><p>Tap <b>Capture</b> while driving, <b>Add lead</b> manually, or pull a batch from the <b>Foreclosures</b> tab.</p></div>`;
+    renderMap(); return;
+  }
+  const view=leads.filter(leadMatch);
+  if(!view.length){ wrap.innerHTML=`<div class="empty"><div class="ico">${ICN.map}</div><h3>No matches</h3><p>Adjust the filter or search above.</p></div>`; renderMap(); return; }
+  wrap.innerHTML=view.map(l=>{
+    const traces=traceUrls(l.owner,l.address);
+    const cls=l.source==='foreclosure'?'fc':(l.source==='driving'?'drive':'');
+    return `<div class="lead ${cls}">
+      ${l.photo?`<img class="lead-photo" src="${l.photo}" loading="lazy">`:''}
+      <div class="lead-head">
+        <div style="min-width:0">
+          <div class="lead-addr">${esc(l.address)}</div>
+          <div class="lead-meta">
+            ${l.owner?`<span>${ICN.user}${esc(l.owner)}</span>`:''}
+            ${l.phone?`<span>${ICN.phone}${esc(l.phone)}</span>`:''}
+            ${l.saleDate?`<span>${ICN.cal}${esc(l.saleDate)}</span>`:''}
+            <span>${fmtDate(l.created)}</span>
+          </div>
+          ${l.notes?`<div class="lead-note">${esc(l.notes)}</div>`:''}
+          ${!l.coords?`<div class="locating">📍 no pin yet · tap Edit to locate</div>`:''}
+        </div>
+        <span class="badge b-${l.status}">${l.status}</span>
+      </div>
+      <div class="lead-actions">
+        <button onclick="openModal('${l.id}')">${ICN.edit}Edit</button>
+        <a class="trace" href="${traces[0].url}" target="_blank" rel="noopener">${ICN.phone}Phone</a>
+        ${l.coords?`<button onclick="showOnMap('${l.id}')">${ICN.map}Map</button>`:''}
+        <button class="del" onclick="delLead('${l.id}')">${ICN.trash}</button>
+      </div>
+    </div>`;}).join('');
+  renderMap();
+}
+function leadMatch(l){
+  if(leadFilter==='foreclosure'&&l.source!=='foreclosure') return false;
+  if(leadFilter==='driving'&&l.source!=='driving') return false;
+  if(leadFilter==='nophone'&&(l.phone||l.status==='Pass')) return false;
+  if(leadSearch){ const h=(l.address+' '+(l.owner||'')+' '+(l.county||'')).toLowerCase(); if(!h.includes(leadSearch)) return false; }
+  return true;
+}
+function buildFilterChips(){
+  const el=document.getElementById('filterChips'); if(!el) return;
+  const defs=[['all','All',leads.length],['foreclosure','Foreclosures',leads.filter(l=>l.source==='foreclosure').length],['driving','Driving',leads.filter(l=>l.source==='driving').length],['nophone','Need phone',leads.filter(l=>!l.phone&&l.status!=='Pass').length]];
+  el.innerHTML=defs.map(d=>`<button class="fchip ${leadFilter===d[0]?'sel':''}" onclick="setFilter('${d[0]}')">${d[1]} ${d[2]}</button>`).join('');
+}
+window.setFilter=function(f){ leadFilter=f; render(); };
+function compressImg(file, cb){
+  const r=new FileReader();
+  r.onload=e=>{ const img=new Image(); img.onload=()=>{ const max=1000; let w=img.width,h=img.height; if(w>max||h>max){ if(w>h){h=Math.round(h*max/w);w=max;}else{w=Math.round(w*max/h);h=max;} } const c=document.createElement('canvas'); c.width=w;c.height=h; c.getContext('2d').drawImage(img,0,0,w,h); try{ cb(c.toDataURL('image/jpeg',0.6)); }catch(err){ cb(''); } }; img.onerror=()=>cb(''); img.src=e.target.result; };
+  r.onerror=()=>cb(''); r.readAsDataURL(file);
+}
+(function(){
+  const s=document.getElementById('leadSearch'); if(s) s.addEventListener('input',e=>{ leadSearch=e.target.value.toLowerCase().trim(); render(); });
+  const cl=document.getElementById('clearLeads'); if(cl) cl.addEventListener('click',()=>{
+    const v=leads.filter(leadMatch); if(!v.length){ toast('Nothing to clear','err'); return; }
+    const label=(leadFilter==='all'&&!leadSearch)?('all '+leads.length+' leads'):(v.length+' shown');
+    if(!confirm('Clear '+label+'? This cannot be undone.')) return;
+    const ids=new Set(v.map(l=>l.id)); leads=leads.filter(l=>!ids.has(l.id)); save(); render(); toast('Cleared '+v.length+' leads');
+  });
+  const pb=document.getElementById('fPhotoBtn'); if(pb) pb.addEventListener('click',()=>document.getElementById('fPhotoInput').click());
+  const pi=document.getElementById('fPhotoInput'); if(pi) pi.addEventListener('change',e=>{ const f=e.target.files[0]; if(!f) return; compressImg(f,d=>{ pendingPhoto=d; const t=document.getElementById('fPhotoThumb'); t.src=d; t.style.display=d?'block':'none'; }); e.target.value=''; });
+})();
+window.delLead=function(id){ if(!confirm("Delete this lead?")) return; leads=leads.filter(l=>l.id!==id); save(); render(); toast("Lead deleted"); };
+window.openModal=openModal;
+
+/* Map */
+function initMap(){
+  map=L.map('map',{zoomControl:true,attributionControl:false}).setView([33.75,-84.39],6);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:20,subdomains:'abcd'}).addTo(map);
+  markerLayer=L.layerGroup().addTo(map);
+  initParcels();
+  map.on('zoomend moveend', updateParcels);
+  map.on('dragstart', ()=>{ follow=false; });
+  map.on('click', onMapClick);
+}
+async function onMapClick(e){
+  const {lat,lng}=e.latlng; pendingCoords={lat,lng};
+  const info=await identifyParcel(e.latlng).catch(()=>({}));
+  let address=(info&&info.address)||""; if(!address){ try{ address=await reverseGeocode(lat,lng);}catch(err){} }
+  openModal(null,{address, owner:(info&&info.owner)||""});
+  if(info&&info.parcelId){ const n=document.getElementById('fNotes'); n.value=(n.value?n.value+' · ':'')+'Parcel '+info.parcelId; }
+}
+
+/* ---- parcel lot-line overlays (free county/state GIS) ---- */
+let parcelLayers=[], parcelsOn=true, parcelHi=null;
+const PARCEL_SVCS=[
+  {name:'Cobb',     url:'https://gis.cobbcounty.gov/gisserver/rest/services/tax/taxassessorsdaily/MapServer/0'},
+  {name:'Fulton',   url:'https://gismaps.fultoncountyga.gov/arcgispub2/rest/services/PropertyMapViewer/PropertyMapViewer/MapServer/11'},
+  {name:'DeKalb',   url:'https://services2.arcgis.com/IxVN2oUE9EYLSnPE/arcgis/rest/services/Tax_Parcels_2025/FeatureServer/0'},
+  {name:'Gwinnett', url:'https://services3.arcgis.com/RfpmnkSAQleRbndX/arcgis/rest/services/Property_and_Tax/FeatureServer/0'},
+  {name:'Florida',  url:'https://services9.arcgis.com/Gh9awoU677aKree0/arcgis/rest/services/Florida_Statewide_Cadastral/FeatureServer/0'}
+];
+function initParcels(){
+  if(typeof L==='undefined'||!L.esri) return;
+  PARCEL_SVCS.forEach(s=>{
+    try{ s.layer=L.esri.featureLayer({url:s.url, minZoom:14, simplifyFactor:0.4, precision:6,
+      style:()=>({color:'#38BDF8', weight:1.1, opacity:.85, fillOpacity:0})});
+      parcelLayers.push(s);
+    }catch(e){}
+  });
+  updateParcels();
+}
+function updateParcels(){
+  if(!map) return;
+  const show=parcelsOn && map.getZoom()>=14;
+  parcelLayers.forEach(s=>{ if(!s.layer) return; try{ if(show){ if(!map.hasLayer(s.layer)) s.layer.addTo(map);} else { if(map.hasLayer(s.layer)) map.removeLayer(s.layer);} }catch(e){} });
+}
+function ownerFrom(a){ if(!a) return ""; const k=Object.keys(a).find(k=>/own/i.test(k)&&!/(mail|addr|city|state|zip|num|id|code|ratio|%)/i.test(k)); return k?String(a[k]||"").trim():""; }
+function apnFrom(a){ if(!a) return ""; const k=Object.keys(a).find(k=>/(parcel|apn|^pin$|^pin_|ppin|taxid|parid|parcelid)/i.test(k)); return k?String(a[k]||"").trim():""; }
+function addrFrom(a){ if(!a) return ""; const k=Object.keys(a).find(k=>/^(address|situs|prop_?addr|site_?addr|saddr)/i.test(k)||(/addr/i.test(k)&&!/(own|mail)/i.test(k))); return k?String(a[k]||"").trim():""; }
+function drawParcel(feature){
+  try{
+    if(parcelHi){ map.removeLayer(parcelHi); parcelHi=null; }
+    parcelHi=L.geoJSON(feature,{style:{color:'#FBBF24',weight:3,fillColor:'#FBBF24',fillOpacity:.14}}).addTo(map);
+    setTimeout(()=>{ if(parcelHi){ map.removeLayer(parcelHi); parcelHi=null; } }, 14000);
+  }catch(e){}
+}
+function identifyParcel(latlng){
+  return new Promise(resolve=>{
+    if(!L.esri){ resolve({}); return; }
+    let done=false; const finish=v=>{ if(!done){ done=true; resolve(v||{}); } };
+    const timer=setTimeout(()=>finish({}), 6000);
+    let pending=PARCEL_SVCS.length;
+    const dec=()=>{ if(--pending<=0){ clearTimeout(timer); finish({}); } };
+    const handle=(err,fc)=>{
+      if(!err && fc && fc.features && fc.features.length){
+        const f=fc.features[0]; drawParcel(f); clearTimeout(timer);
+        finish({owner:ownerFrom(f.properties), parcelId:apnFrom(f.properties), address:addrFrom(f.properties)});
+      } else dec();
+    };
+    PARCEL_SVCS.forEach(s=>{
+      try{ if(s.layer){ s.layer.query().contains(latlng).run(handle); } else dec(); }
+      catch(e){ dec(); }
+    });
+  });
+}
+document.addEventListener('click', e=>{
+  if(e.target.closest && e.target.closest('#parcelBtn')){
+    parcelsOn=!parcelsOn; document.getElementById('parcelBtn').classList.toggle('on',parcelsOn); updateParcels();
+    toast(parcelsOn?"Lot lines on":"Lot lines off");
+  }
+});
+function dot(color){ return L.divIcon({className:'',html:`<div style="width:18px;height:18px;border-radius:50%;background:${color};border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.6)"></div>`,iconSize:[18,18],iconAnchor:[9,9]}); }
+function renderMap(){
+  if(!map) return; markerLayer.clearLayers();
+  const pts=leads.filter(l=>l.coords);
+  pts.forEach(l=>{
+    const m=L.marker([l.coords.lat,l.coords.lng],{icon:dot(l.source==='foreclosure'?'#FB923C':'#10B981')}).addTo(markerLayer);
+    m.bindPopup(`<div class="pin-pop"><b>${esc(l.address)}</b><span class="pp-sub">${l.owner?esc(l.owner)+' · ':''}${l.status}${l.saleDate?' · '+esc(l.saleDate):''}</span><button onclick="openModal('${l.id}')">Open lead</button></div>`);
+  });
+  if(pts.length && !(follow && curPos)){ try{ map.fitBounds(L.latLngBounds(pts.map(l=>[l.coords.lat,l.coords.lng])).pad(0.3),{maxZoom:16}); }catch(e){} }
+}
+window.showOnMap=function(id){ switchView('mapView'); const l=leads.find(x=>x.id===id); if(l&&l.coords&&map) setTimeout(()=>map.setView([l.coords.lat,l.coords.lng],17),140); };
+
+/* Tabs */
+function switchView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===id));
+  document.getElementById('fabWrap').style.display=(id==='fcView')?'none':'flex';
+  if(id==='mapView'&&map){ startTracking(); setTimeout(()=>{ map.invalidateSize(); renderMap(); },140); }
+}
+document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));
+
+/* CSV import (Remine / Realist / generic owner lists) */
+function parseCSV(text){
+  const rows=[]; let row=[], field='', i=0, q=false;
+  text=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  while(i<text.length){ const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){field+='"';i+=2;continue;} q=false;i++;continue;} field+=c;i++;continue; }
+    if(c==='"'){q=true;i++;continue;}
+    if(c===','){row.push(field);field='';i++;continue;}
+    if(c==='\n'){row.push(field);rows.push(row);row=[];field='';i++;continue;}
+    field+=c;i++;
+  }
+  if(field.length||row.length){row.push(field);rows.push(row);}
+  return rows.filter(r=>r.some(x=>x.trim()!==''));
+}
+const CSV_SYN={
+  address:["property address","site address","situs address","street address","prop address","address 1","property street address","situs","address"],
+  city:["property city","situs city","prop city","city"],
+  state:["property state","situs state","prop state","state","st"],
+  zip:["property zip","situs zip","zip code","zipcode","postal code","zip"],
+  owner:["owner name 1","owner full name","owner names","owner name","owner 1","owner1","primary owner","ownername","owner"],
+  owner2:["owner name 2","owner 2","owner2","secondary owner"],
+  mailing:["owner mailing address","mailing address 1","mailing street","mail address","mailing address","owner address"],
+  mailcity:["mailing city","mail city"], mailstate:["mailing state","mail state"], mailzip:["mailing zip","mail zip"],
+  phone:["mobile phone","cell phone","phone number","phone 1","owner phone","primary phone","telephone","mobile","landline","cell","phone1","phone"],
+  email:["owner email","email address","email"],
+  lat:["latitude","lat"], lng:["longitude","lng","long","lon"],
+  saleDate:["last sale date","sale date","sold date"], county:["county"],
+  status:["mls status","standardstatus","property status","listing status","distress","distress indicator","distressed","status"],
+  notes:["notes","comments","remarks","description"],
+  equity:["estimated equity","est equity","equity %","equity"]
+};
+function buildMap(headers){
+  const norm=headers.map(h=>h.toLowerCase().trim().replace(/[._-]+/g,' ').replace(/\s+/g,' '));
+  const map={};
+  for(const key in CSV_SYN){ for(const syn of CSV_SYN[key]){ const idx=norm.indexOf(syn); if(idx!==-1&&map[key]===undefined){map[key]=idx;break;} } }
+  return map;
+}
+function gcell(row,map,key){ const i=map[key]; return (i==null)?"":(row[i]||"").trim(); }
+function importCSVText(text){
+  const rows=parseCSV(text); if(rows.length<2) return {leads:[],mapped:[]};
+  const map=buildMap(rows[0]); const out=[];
+  for(let r=1;r<rows.length;r++){
+    const row=rows[r];
+    const addr=gcell(row,map,'address'), city=gcell(row,map,'city'), state=gcell(row,map,'state'), zip=gcell(row,map,'zip');
+    if(!addr) continue;
+    let full=addr;
+    if(!/,/.test(addr)&&(city||state||zip)) full=`${addr}, ${city}, ${state} ${zip}`;
+    full=full.replace(/\s+/g,' ').replace(/,\s*,/g,', ').replace(/,\s*$/,'').trim();
+    let owner=gcell(row,map,'owner'); const o2=gcell(row,map,'owner2'); if(o2) owner=owner?owner+" & "+o2:o2;
+    let mailing=gcell(row,map,'mailing'); const mc=gcell(row,map,'mailcity'),ms=gcell(row,map,'mailstate'),mz=gcell(row,map,'mailzip');
+    if(mailing&&!/,/.test(mailing)&&(mc||ms)) mailing=`${mailing}, ${mc}, ${ms} ${mz}`.replace(/\s+/g,' ').replace(/,\s*,/g,', ').replace(/,\s*$/,'').trim();
+    const lat=parseFloat(gcell(row,map,'lat')), lng=parseFloat(gcell(row,map,'lng'));
+    const coords=(!isNaN(lat)&&!isNaN(lng)&&lat&&lng)?{lat,lng}:null;
+    const statusRaw=gcell(row,map,'status'), notesRaw=gcell(row,map,'notes'), equity=gcell(row,map,'equity');
+    const isFC=/foreclos|pre.?foreclos|lis pendens|notice of (default|sale)|reo|auction|distress/i.test(statusRaw+" "+notesRaw);
+    const noteBits=[]; if(notesRaw) noteBits.push(notesRaw); if(equity) noteBits.push("Equity "+equity);
+    out.push({address:full, owner, mailing, phone:gcell(row,map,'phone'), email:gcell(row,map,'email'),
+      saleDate:gcell(row,map,'saleDate'), county:gcell(row,map,'county'), coords,
+      status:isFC?"Foreclosure":"New", notes:noteBits.join(" \u00b7 ")});
+  }
+  return {leads:out, mapped:Object.keys(map)};
+}
+document.getElementById('importCsv').addEventListener('click', ()=>document.getElementById('csvFile').click());
+document.getElementById('csvFile').addEventListener('change', e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    let res; try{ res=importCSVText(ev.target.result); }catch(err){ toast("Couldn't read that CSV","err"); return; }
+    if(!res.leads.length){ toast("No property addresses found in that file","err"); return; }
+    if(res.mapped.indexOf('address')===-1){ toast("Couldn't find an address column","err"); return; }
+    let added=0; const needGeo=[];
+    res.leads.forEach(p=>{
+      if(leads.some(l=>l.address.toLowerCase()===p.address.toLowerCase())) return;
+      const lead={ id:uid(), address:p.address, status:p.status||"New", owner:p.owner||"", mailing:p.mailing||"",
+        phone:p.phone||"", email:p.email||"", saleDate:p.saleDate||"", county:p.county||"",
+        notes:(p.notes||"")||(p.email?("✉ "+p.email):""), coords:p.coords||null, source:(p.status==="Foreclosure"?"foreclosure":"import"), created:new Date().toISOString() };
+      leads.unshift(lead); added++; if(!lead.coords) needGeo.push(lead);
+    });
+    save(); render(); switchView('listView');
+    toast(`Imported ${added} lead${added===1?'':'s'} ✓${needGeo.length?` · mapping ${needGeo.length}`:''}`);
+    if(needGeo.length) geocodeQueue(needGeo);
+  };
+  reader.readAsText(file); e.target.value='';
+});
+
+/* CSV */
+document.getElementById('exportCsv').addEventListener('click', ()=>{
+  if(!leads.length){ toast("No leads to export","err"); return; }
+  const cols=["Address","Status","Owner","Owner Mailing","Phone","Email","Sale Date","County","Notes","Source","Latitude","Longitude","Captured"];
+  const rows=leads.map(l=>[l.address,l.status,l.owner,l.mailing,l.phone,l.email||"",l.saleDate||"",l.county||"",l.notes,l.source||"",l.coords?l.coords.lat:"",l.coords?l.coords.lng:"",l.created]);
+  const csv=[cols,...rows].map(r=>r.map(csvCell).join(",")).join("\r\n");
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8;"}));
+  a.download=`legacyleads_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(a); a.click(); a.remove();
+  toast(`Exported ${leads.length} leads ✓`);
+});
+function csvCell(v){ v=(v==null?"":String(v)); return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+
+const st=document.createElement('style'); st.textContent='@keyframes spin{to{transform:rotate(360deg)}}'; document.head.appendChild(st);
+initMap(); render(); switchView('mapView');
+</script>
+</body>
+</html>

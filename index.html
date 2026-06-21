@@ -312,7 +312,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 13</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 14</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -475,6 +475,13 @@ const ICN={pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
   trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>'};
 const HOUSE_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8M5 10v10h14V10M9 20v-6h6v6"/></svg>';
 const XSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>';
+function aerialUrl(lat,lng,w,h){ const d=0.00085; const b=[lng-d,lat-d,lng+d,lat+d].join(','); return 'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/export?bbox='+b+'&bboxSR=4326&imageSR=4326&size='+w+','+h+'&format=jpg&f=image'; }
+window.imgFail=function(img){ try{ img.outerHTML='<div class="lead-photoph">'+HOUSE_SVG+'</div>'; }catch(e){} };
+function leadPhotoEl(l){
+  if(l.photo) return '<img class="lead-photo" src="'+l.photo+'" loading="lazy">';
+  if(l.coords) return '<img class="lead-photo" loading="lazy" src="'+aerialUrl(l.coords.lat,l.coords.lng,460,300)+'" onerror="imgFail(this)">';
+  return '<div class="lead-photoph">'+HOUSE_SVG+'</div>';
+}
 
 /* skip-trace deep links */
 function traceUrls(owner, address){
@@ -732,7 +739,7 @@ function render(){
   wrap.innerHTML=capNote+shown.map(l=>{
     const traces=traceUrls(l.owner,l.address);
     const cls=l.source==='foreclosure'?'fc':(l.source==='driving'?'drive':'');
-    const photo=l.photo?`<img class="lead-photo" src="${l.photo}" loading="lazy">`:`<div class="lead-photoph">${HOUSE_SVG}</div>`;
+    const photo=leadPhotoEl(l);
     const phoneHref=l.phone?`href="tel:${l.phone.replace(/[^0-9+]/g,'')}"`:`href="${traces[0].url}" target="_blank" rel="noopener"`;
     return `<div class="lead ${cls}" onclick="openModal('${l.id}')">
       ${photo}
@@ -892,10 +899,11 @@ window.openPropSheet=function(id){
   const eq=((l.notes||'').match(/Equity\s*\d+%/)||[''])[0];
   const sub=[l.county, (l.address.split(',').slice(1).join(',').trim())].filter(Boolean).join(' · ') || l.status;
   const tel=(l.phone||'').replace(/[^0-9+]/g,'');
-  const photoStyle=l.photo?`style="background-image:url('${l.photo}')"`:'';
+  const pbg=l.photo?l.photo:(l.coords?aerialUrl(l.coords.lat,l.coords.lng,620,320):'');
+  const photoStyle=pbg?`style="background-image:url('${pbg}')"`:'';
   document.getElementById('propBody').innerHTML=`
     <div class="pc-photo" ${photoStyle}>
-      ${l.photo?'':`<div class="pc-ph">${HOUSE_SVG}</div>`}
+      ${pbg?'':`<div class="pc-ph">${HOUSE_SVG}</div>`}
       <button class="pc-x" onclick="closePropSheet()">${XSVG}</button>
       ${eq?`<span class="pc-eq">${eq}</span>`:''}
     </div>

@@ -313,7 +313,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 17</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 18</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -351,8 +351,8 @@
       </div>
 
       <div class="card" style="border-color:var(--fc);">
-        <div class="card-h"><div class="step" style="background:var(--fc);">FL</div><div><h3>Orlando foreclosures — ready now</h3><p>26 live Orange County auctions · no file needed</p></div></div>
-        <button class="fc-go" id="loadFC" style="margin-top:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Add 26 Orlando foreclosures to my map</button>
+        <div class="card-h"><div class="step" style="background:var(--fc);">GA</div><div><h3>Live foreclosures — ready now</h3><p>Georgia, Alabama &amp; Florida auctions · refreshed monthly · no file</p></div></div>
+        <button class="fc-go" id="loadFC" style="margin-top:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Add current GA · AL · FL foreclosures to my map</button>
       </div>
 
       <div class="card">
@@ -491,20 +491,20 @@ const STATUSES = ["New","Foreclosure","Vacant","Distressed","Absentee","Contacte
 const KEY = "legacyleads_v2";
 const GEO_CAP = 400; // max rows we will live-geocode from one import (rows with lat/lng skip this)
 const FL_FORECLOSURES=[{"address": "1148 GRAND HILLTOP DR, APOPKA, FL 32703", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/24/2026 · Judgment $240,485.89 · Assessed $235,038.00 · Case 2019-CA-006693-O"}, {"address": "13326 SPROSTON PT, ORLANDO, FL 32832", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/24/2026 · Judgment $922,794.89 · Assessed $420,316.00 · Case 2019-CA-013511-O"}, {"address": "7755 SENJILL CT, ORLANDO, FL 32818", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/24/2026 · Judgment $5,832.76 · Assessed $308,895.00 · Case 2024-CA-007987-O"}, {"address": "14733 GLADE HILL PARK WAY, WINTER GARDEN, FL 34787", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/24/2026 · Judgment $619,537.79 · Assessed $725,536.00 · Case 2025-CA-002408-O"}, {"address": "6120 CENTENNIAL DR, ORLANDO, FL 32808", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/24/2026 · Judgment $469,387.48 · Assessed $291,848.00 · Case 2025-CA-009535-O"}, {"address": "12872 LAKE SAWYER LN, WINDERMERE, FL 34786", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/24/2026 · Judgment $1,059,474.58 · Assessed $661,612.00 · Case 2016-CA-004877-O"}, {"address": "10070 BRODBECK BLVD, ORLANDO, FL 32832", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/22/2026 · Judgment $466,281.54 · Assessed $482,430.00 · Case 2025-CA-003375-O"}, {"address": "820 KENSINGTON DR, ORLANDO, FL 32808", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/22/2026 · Judgment $139,260.92 · Assessed $136,206.00 · Case 2025-CA-006502-O"}, {"address": "8007 MEADOWGLEN DR, ORLANDO, FL 32810", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/22/2026 · Judgment $292,752.75 · Assessed $299,800.00 · Case 2025-CA-007969-O"}, {"address": "3608 TAM DR, ORLANDO, FL 32808", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/22/2026 · Judgment $324,627.20 · Assessed $229,321.00 · Case 2025-CA-010780-O"}, {"address": "2321 HOME AGAIN RD, APOPKA, FL 32712", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/25/2026 · Judgment $297,135.02 · Assessed $430,560.00 · Case 2024-CA-009114-O"}, {"address": "10613 ABINGDON CHASE, ORLANDO, FL 32817", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/25/2026 · Judgment $365,771.53 · Assessed $169,439.00 · Case 2025-CA-002889-O"}, {"address": "1242 SHELTER ROCK RD, ORLANDO, FL 32835", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/25/2026 · Judgment $323,496.11 · Assessed $248,735.00 · Case 2025-CA-007640-O"}, {"address": "3705 CONNOR AVE, ORLANDO, FL 32808", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/25/2026 · Judgment $89,427.25 · Assessed $132,436.00 · Case 2025-CC-021189-O"}, {"address": "314 E GULLEY AVE, OAKLAND, FL 34760", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/23/2026 · Judgment $254,677.03 · Assessed $154,240.00 · Case 2020-CA-000551-O"}, {"address": "3058 BRANDYWINE DR, ORLANDO, FL 32806", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/23/2026 · Judgment $363,977.85 · Assessed $459,824.00 · Case 2024-CA-009320-O"}, {"address": "364 BRIAR BAY CIR, ORLANDO, FL 32825", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/23/2026 · Judgment $191,540.62 · Assessed $329,840.00 · Case 2025-CA-003128-O"}, {"address": "20 OAKDALE ST, WINDERMERE, FL 34786", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/23/2026 · Judgment $1,024,988.26 · Assessed $1,275,020.00 · Case 2025-CA-010973-O"}, {"address": "4843 NORWALK PL, ORLANDO, FL 32808", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/30/2026 · Judgment $245,843.10 · Assessed $178,514.00 · Case 2013-CA-008322-O"}, {"address": "2679 BREEZY MEADOW RD, APOPKA, FL 32712", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/30/2026 · Judgment $328,150.34 · Assessed $189,047.00 · Case 2023-CA-013917-O"}, {"address": "7628 MILANO DR, ORLANDO, FL 32835", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/30/2026 · Judgment $276,528.44 · Assessed $329,175.00 · Case 2024-CA-005684-O"}, {"address": "1574 THETFORD CIR, ORLANDO, FL 32824", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/30/2026 · Judgment $329,629.55 · Assessed $428,790.00 · Case 2024-CA-010384-O"}, {"address": "321 FAIRWAY POINTE CIR, ORLANDO, FL 32828", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/30/2026 · Judgment $526,609.00 · Assessed $500,987.00 · Case 2025-CA-008759-O"}, {"address": "3126 KELVINGTON DR, ORLANDO, FL 32810", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/30/2026 · Judgment $304,541.96 · Assessed $218,062.00 · Case 2025-CA-009097-O"}, {"address": "217 HORSTFIELD DR, WINTER GARDEN, FL 34787", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/30/2026 · Judgment $9,483.74 · Assessed $96,309.00 · Case 2022-CA-008094-O"}, {"address": "4177 N ORANGE BLOSSOM TRL, ORLANDO, FL 32804", "status": "Foreclosure", "county": "Orange", "notes": "FL foreclosure auction 06/30/2026 · Judgment $322,816.80 · Assessed $284,900.00 · Case 2025-CA-006710-O"}];
-window.loadBundledFC=function(){
+window.loadBundledFC=async function(){
+  let data=[];
+  try{ const r=await fetch('foreclosures.json?t='+Date.now()); data=await r.json(); }catch(e){ toast('Could not load foreclosures — check connection','err'); return; }
   const seen=new Set(leads.map(l=>(l.address||'').toLowerCase()));
-  let added=0;
   const fresh=[];
-  for(const p of FL_FORECLOSURES){
-    const key=(p.address||'').toLowerCase(); if(seen.has(key)) continue; seen.add(key);
-    fresh.push({id:uid(), address:p.address, status:'Foreclosure', owner:'', mailing:'', phone:'', email:'', saleDate:'', county:p.county, notes:p.notes, coords:null, source:'foreclosure', created:new Date().toISOString()});
-    added++;
+  for(const p of (data||[])){
+    const key=(p.address||'').toLowerCase(); if(!key||seen.has(key)) continue; seen.add(key);
+    fresh.push({id:uid(), address:p.address, status:'Foreclosure', owner:'', mailing:'', phone:'', email:'', saleDate:p.saleDate||'', county:p.county||'', notes:p.notes||'', coords:null, source:'foreclosure', created:new Date().toISOString()});
   }
-  if(!added){ toast('Those foreclosures are already in your leads'); return; }
+  if(!fresh.length){ toast('Those foreclosures are already in your leads'); return; }
   leads=fresh.concat(leads); save(); render();
   follow=false;
   switchView('mapView'); setTimeout(()=>{ if(map){ map.invalidateSize(); renderMap(true);} },160);
-  toast('Added '+added+' Orlando foreclosures \u2713 \u00b7 mapping…');
+  toast('Added '+fresh.length+' foreclosures \u2713 \u00b7 mapping…');
   bulkGeocode(fresh);
   let tries=0; const fit=setInterval(()=>{
     tries++;

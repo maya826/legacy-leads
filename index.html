@@ -189,6 +189,7 @@
   .src .tag{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0;color:#fff;}
   .src.ga .tag{background:var(--brand);} .src.al .tag{background:var(--fc);}
   .src.fl .tag{background:var(--mauve);} .src.hud .tag{background:var(--wine-d,#4E1F33);}
+  .src.tax .tag{background:var(--mauve);} .src.reo .tag{background:var(--brand);} .src .tag{font-size:10px;letter-spacing:.02em;}
   .aux-links{margin-top:12px; font-size:12px; color:var(--muted); line-height:1.9;}
   .aux-links a{color:var(--brand); text-decoration:none; font-weight:700; background:var(--rose-soft); padding:3px 9px; border-radius:8px; margin-right:5px; display:inline-block;}
   textarea#fcPaste{
@@ -312,7 +313,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 14</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 15</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -345,34 +346,62 @@
   <div class="view" id="fcView">
     <div class="fc-wrap">
       <div class="hero">
-        <h2>Pull real foreclosures</h2>
-        <p>Free public-record foreclosure notices for Georgia, Alabama &amp; Florida — auto-extracted into mapped leads with owner names.</p>
+        <h2>Free lead sources</h2>
+        <p>Every free, public source for distressed and motivated-seller leads in your markets. Open one, copy the list, and paste it below to drop the leads onto your map.</p>
       </div>
 
       <div class="card">
-        <div class="card-h"><div class="step">1</div><div><h3>Open a live foreclosure list</h3><p>Pick your county on the site, then select-all &amp; copy</p></div></div>
+        <div class="card-h"><div class="step">1</div><div><h3>County tax-sale &amp; delinquent lists</h3><p>Free · public record · your six metro counties</p></div></div>
         <div class="src-grid">
-          <a class="src ga" href="https://www.georgiapublicnotice.com/Search.aspx?keywords=foreclosure" target="_blank" rel="noopener"><span class="tag">GA</span>Georgia</a>
-          <a class="src al" href="https://www.alabamapublicnotices.com/Search.aspx?keywords=foreclosure" target="_blank" rel="noopener"><span class="tag">AL</span>Alabama</a>
-          <a class="src fl" href="https://floridapublicnotices.com/" target="_blank" rel="noopener"><span class="tag">FL</span>Florida</a>
-          <a class="src hud" href="https://www.hudhomestore.gov/Listing/PropertySearch.aspx" target="_blank" rel="noopener"><span class="tag">HUD</span>HUD Homes</a>
+          <a class="src tax" href="https://www.cobbtax.gov/property/tax_sale/index.php" target="_blank" rel="noopener"><span class="tag">TAX</span>Cobb</a>
+          <a class="src tax" href="https://fultoncountytaxes.org/" target="_blank" rel="noopener"><span class="tag">TAX</span>Fulton</a>
+          <a class="src tax" href="https://dekalbtax.org/property-tax/delinquent-taxes/" target="_blank" rel="noopener"><span class="tag">TAX</span>DeKalb</a>
+          <a class="src tax" href="https://www.gwinnetttaxcommissioner.com/property-tax/delinquent-tax/delinquent-tax-list" target="_blank" rel="noopener"><span class="tag">TAX</span>Gwinnett</a>
+          <a class="src tax" href="https://www.cherokeega.com/tax-commissioner/" target="_blank" rel="noopener"><span class="tag">TAX</span>Cherokee</a>
+          <a class="src tax" href="https://www.douglascountytax.org/" target="_blank" rel="noopener"><span class="tag">TAX</span>Douglas</a>
         </div>
-        <div class="aux-links">FL county auction sale lists:
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div class="step">2</div><div><h3>Government-owned (REO) homes</h3><p>Free national listings · filter to Georgia</p></div></div>
+        <div class="src-grid">
+          <a class="src reo" href="https://www.hudhomestore.gov/searchresult?citystate=GA" target="_blank" rel="noopener"><span class="tag">HUD</span>HUD Homes GA</a>
+          <a class="src reo" href="https://www.homepath.com/state/ga" target="_blank" rel="noopener"><span class="tag">FNM</span>Fannie HomePath</a>
+          <a class="src reo" href="https://www.homesteps.com/" target="_blank" rel="noopener"><span class="tag">FRE</span>Freddie HomeSteps</a>
+          <a class="src reo" href="https://properties.sela.usda.gov/" target="_blank" rel="noopener"><span class="tag">RHS</span>USDA homes</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div class="step">3</div><div><h3>Foreclosure notices &amp; auctions</h3><p>GA &amp; AL legal notices · FL county auctions</p></div></div>
+        <div class="src-grid">
+          <a class="src ga" href="https://www.georgiapublicnotice.com/Search.aspx?keywords=foreclosure" target="_blank" rel="noopener"><span class="tag">GA</span>Georgia notices</a>
+          <a class="src al" href="https://www.alabamapublicnotices.com/" target="_blank" rel="noopener"><span class="tag">AL</span>Alabama notices</a>
+        </div>
+        <div class="aux-links">GA county legal organs (foreclosure ads):
+          <a href="https://www.mdjonline.com/" target="_blank" rel="noopener">Marietta DJ · Cobb</a>
+          <a href="https://www.gwinnettdailypost.com/" target="_blank" rel="noopener">Gwinnett Post</a>
+          <a href="https://www.douglascountysentinel.com/" target="_blank" rel="noopener">Douglas Sentinel</a>
+          <a href="https://www.tribuneledgernews.com/" target="_blank" rel="noopener">Cherokee Tribune</a>
+        </div>
+        <div class="aux-links">FL county auctions (RealForeclose · no login):
           <a href="https://www.myorangeclerk.realforeclose.com/" target="_blank" rel="noopener">Orange</a>
           <a href="https://www.osceola.realforeclose.com/" target="_blank" rel="noopener">Osceola</a>
           <a href="https://www.duval.realforeclose.com/" target="_blank" rel="noopener">Duval</a>
           <a href="https://www.hillsborough.realforeclose.com/" target="_blank" rel="noopener">Hillsborough</a>
+          <a href="https://www.miamidade.realforeclose.com/" target="_blank" rel="noopener">Miami-Dade</a>
+          <a href="https://www.broward.realforeclose.com/" target="_blank" rel="noopener">Broward</a>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-h"><div class="step">2</div><div><h3>Paste &amp; extract</h3><p>Engine pulls address, owner, county &amp; sale date</p></div></div>
-        <textarea id="fcPaste" placeholder="Paste the copied foreclosure notices here…"></textarea>
+        <div class="card-h"><div class="step">4</div><div><h3>Paste &amp; map</h3><p>Copy any list or notice above, paste here → leads with owner &amp; sale date</p></div></div>
+        <textarea id="fcPaste" placeholder="Paste copied foreclosure notices or list rows here…"></textarea>
         <button class="fc-go" id="fcParse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Extract &amp; map leads</button>
       </div>
 
       <div class="card" id="fcResultCard" style="display:none">
-        <div class="card-h"><div class="step" style="background:linear-gradient(135deg,var(--brand),var(--brand-d));color:#04210f">✓</div><div><h3 id="fcResultTitle">Parsed</h3><p>Saved to Leads · pins drop on Map automatically</p></div></div>
+        <div class="card-h"><div class="step" style="background:var(--brand);color:#fff">&#10003;</div><div><h3 id="fcResultTitle">Parsed</h3><p>Saved to Leads · pins drop on the Map</p></div></div>
         <div id="fcResults"></div>
       </div>
     </div>

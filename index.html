@@ -340,6 +340,8 @@
   .dchip{background:#F3E7EC;color:var(--brand);border:1.5px solid transparent;font-size:12px;font-weight:700;padding:6px 12px;border-radius:20px;cursor:pointer;}
   .dchip.on{background:var(--brand);color:#fff;}
   .pc-add{display:block;width:100%;margin:14px 0 4px;background:var(--brand);color:#fff;border:none;font-size:15px;font-weight:800;padding:13px;border-radius:13px;cursor:pointer;}
+  .keybanner{background:#F3E7EC;color:var(--brand);border:1.5px dashed var(--brand);border-radius:12px;padding:11px 14px;margin-bottom:12px;font-size:13px;font-weight:700;cursor:pointer;text-align:center;}
+  .keybanner:hover{background:var(--brand);color:#fff;}
   .me{width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
   .me-core{width:15px;height:15px;border-radius:50%;background:var(--brand);border:3px solid #fff;box-shadow:0 0 0 0 rgba(108,43,69,.4);animation:pulse 1.7s infinite;}
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(108,43,69,.4)}70%{box-shadow:0 0 0 18px rgba(108,43,69,0)}100%{box-shadow:0 0 0 0 rgba(108,43,69,0)}}
@@ -365,7 +367,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 41</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 42</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -529,6 +531,7 @@
     <div class="photo-row">
       <img id="fPhotoThumb" class="photo-thumb" style="display:none" alt="">
       <button type="button" class="photo-btn" id="fPhotoBtn">📷 Add / take photo</button>
+      <button type="button" class="photo-btn" id="fGsvBtn" onclick="setGsvKey()">🏠 Turn on Street View photos (paste key)</button>
       <input type="file" id="fPhotoInput" accept="image/*" capture="environment" style="display:none">
     </div>
     <div class="sheet-btns">
@@ -880,7 +883,8 @@ function render(){
   if(!view.length){ wrap.innerHTML=`<div class="empty"><div class="ico">${ICN.map}</div><h3>No matches</h3><p>Adjust the filter or search above.</p></div>`; renderMap(); return; }
   const LIST_CAP=250; const shown=view.slice(0,LIST_CAP);
   const capNote=view.length>LIST_CAP?`<div class="listcap">Showing ${LIST_CAP} of ${view.length.toLocaleString()} — search or filter to narrow, or open the Map for all pins</div>`:'';
-  wrap.innerHTML=capNote+shown.map(l=>{
+  const keyBanner = gsvKey()?'':`<div class="keybanner" onclick="setGsvKey()">\ud83d\udcf7 Property photos are OFF \u2014 tap here to turn on real Street View photos (one-time: paste your Google key)</div>`;
+  wrap.innerHTML=keyBanner+capNote+shown.map(l=>{
     const traces=traceUrls(l.owner,l.address);
     const cls=l.source==='foreclosure'?'fc':(l.source==='driving'?'drive':'');
     const photo=leadPhotoEl(l);

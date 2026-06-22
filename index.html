@@ -241,8 +241,8 @@
   .prop-card .grab{width:40px;height:4px;border-radius:4px;background:#e0d0da;margin:9px auto 0;}
   .prop-card .pc-photo{aspect-ratio:3/2; max-height:300px; background:linear-gradient(135deg,#E7D6E0,#D9C2CF); position:relative;}
   .prop-card .pc-img{width:100%;height:100%;object-fit:cover;object-position:center 50%;display:block;}
-  .prop-card .pc-photo .pc-x{position:absolute; top:10px; right:10px; width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.92);border:none;display:flex;align-items:center;justify-content:center;color:var(--brand);}
-  .prop-card .pc-photo .pc-x svg{width:17px;height:17px;}
+  .prop-card .pc-photo .pc-x{position:absolute; top:8px; right:8px; width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.96);border:none;display:flex;align-items:center;justify-content:center;color:var(--brand);z-index:20;box-shadow:0 1px 5px rgba(44,30,39,.3);cursor:pointer;}
+  .prop-card .pc-photo .pc-x svg{width:20px;height:20px;}
   .prop-card .pc-photo .pc-eq{position:absolute; bottom:10px; left:12px; background:rgba(255,255,255,.95); color:var(--brand); font-size:11px; font-weight:800; padding:5px 11px; border-radius:8px;}
   .prop-card .pc-photo .pc-ph{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;}
   .prop-card .pc-photo .pc-ph svg{width:46px;height:46px;color:#fff;opacity:.85;}
@@ -269,7 +269,7 @@
   }
   .sheet-head{position:sticky; top:0; background:#fff; z-index:6; padding-top:8px; padding-bottom:6px; min-height:30px;}
   .sheet-head .grab{margin:2px auto 0;}
-  .sheet-x{position:absolute; right:0; top:6px; width:34px;height:34px;border-radius:50%;background:#F3E7EC;border:none;color:var(--brand);font-size:17px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .sheet-x{position:absolute; right:0; top:4px; width:40px;height:40px;z-index:20;border-radius:50%;background:#F3E7EC;border:none;color:var(--brand);font-size:17px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;}
   .sheet-x:active{transform:scale(.94);}
   @keyframes slideUp{from{transform:translateY(100%);} to{transform:none;}}
   .grab{width:38px;height:4px;border-radius:4px;background:#e0d0da;margin:6px auto 14px;}
@@ -372,7 +372,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 48</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 49</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -655,7 +655,7 @@ function startTracking(){
     if(!accCircle){ accCircle=L.circle([lat,lng],{radius:accuracy,color:'#38BDF8',weight:1,fillColor:'#38BDF8',fillOpacity:.1,interactive:false}).addTo(map); }
     else { accCircle.setLatLng([lat,lng]); accCircle.setRadius(accuracy); }
     if(routeOn){ const last=routePts[routePts.length-1]; if(!last||last[0]!==lat||last[1]!==lng) routePts.push([lat,lng]); if(!routeLine){ routeLine=L.polyline(routePts,{color:'#10B981',weight:5,opacity:.85,interactive:false}).addTo(map);} else routeLine.setLatLngs(routePts); }
-    if(follow) map.setView([lat,lng], Math.max(map.getZoom()||16,16));
+    if(follow){ try{ const c=map.getCenter(); if(!c || map.distance(c,[lat,lng])>35) map.setView([lat,lng], Math.max(map.getZoom()||16,16)); }catch(e){ map.setView([lat,lng], Math.max(map.getZoom()||16,16)); } }
   }, err=>{ setLive(false); if(err.code===1) toast("Location denied — enable it in your browser settings","err"); }, {enableHighAccuracy:true,maximumAge:2000,timeout:20000});
 }
 async function captureHere(){
@@ -1104,6 +1104,7 @@ function initMap(){
   map.on('zoomend moveend', updateParcels);
   map.on('zoomend moveend', scheduleHouseLabels);
   map.on('dragstart', ()=>{ follow=false; });
+  map.on('zoomstart', ()=>{ follow=false; });
   map.on('click', onMapClick);
 }
 async function onMapClick(e){
@@ -1118,16 +1119,20 @@ let parcelLayers=[], parcelsOn=true, parcelHi=null;
 let houseLabels=null, _hlTimer=null;
 function houseNumFrom(p){ if(!p) return ''; const a=addrFrom(p); let m=(a||'').match(/^\s*(\d+)/); if(m) return m[1]; const k=Object.keys(p).find(k=>/(hous?e?_?(no|num|nbr)|str_?num|addr_?no|stnum|^num$|^addrno$)/i.test(k)); if(k&&p[k]!=null&&/\d/.test(String(p[k]))) return String(p[k]).replace(/\..*/,'').trim(); return ''; }
 function scheduleHouseLabels(){ clearTimeout(_hlTimer); _hlTimer=setTimeout(updateHouseLabels,250); }
+let _hlLast={z:null,lat:null,lng:null};
 function updateHouseLabels(){
   if(!map) return;
   if(!houseLabels){ houseLabels=L.layerGroup(); }
-  if(!(parcelsOn && map.getZoom()>=17)){ if(map.hasLayer(houseLabels)) map.removeLayer(houseLabels); houseLabels.clearLayers(); return; }
+  if(!(parcelsOn && map.getZoom()>=17)){ if(map.hasLayer(houseLabels)) map.removeLayer(houseLabels); houseLabels.clearLayers(); _hlLast={z:null,lat:null,lng:null}; return; }
+  const z=map.getZoom(), c=map.getCenter();
+  if(_hlLast.z===z && _hlLast.lat!=null && houseLabels.getLayers().length){ try{ if(map.distance(c,[_hlLast.lat,_hlLast.lng])<70) return; }catch(e){} }
+  _hlLast={z, lat:c.lat, lng:c.lng};
   if(!map.hasLayer(houseLabels)) houseLabels.addTo(map);
   houseLabels.clearLayers();
   const view=map.getBounds(); const seen=new Set(); let count=0;
   parcelLayers.forEach(s=>{ if(!s.layer||!map.hasLayer(s.layer)) return;
     try{ s.layer.eachFeature(l=>{
-      if(count>=450) return;
+      if(count>=180) return;
       const p=l.feature&&l.feature.properties; if(!p) return;
       let c; try{ c=l.getBounds().getCenter(); }catch(e){ return; }
       if(!view.contains(c)) return;

@@ -150,6 +150,17 @@
   .lead-body{padding:13px 15px;}
   .lead-head{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
   .lead-addr{font-family:var(--serif); font-weight:600; font-size:16px; line-height:1.2; letter-spacing:-.01em; color:var(--brand);}
+  .lead-sub{font-size:12.5px; color:var(--muted); margin-top:3px; font-weight:600;}
+  .lead-sub b{color:var(--fc-d); font-weight:800;}
+  .lead-pills{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;}
+  .lead-pills .tag{font-size:11px; font-weight:700; padding:4px 9px; border-radius:7px; background:#f2ebef; color:#6b5460; letter-spacing:.01em;}
+  .lead-pills .tag.tag-Foreclosure{background:rgba(178,58,106,.13); color:var(--fc-d);}
+  .lead-pills .tag.tag-Distressed{background:rgba(192,69,95,.13); color:#a3283c;}
+  .lead-pills .tag.tag-eq{background:#e7f0e4; color:#3b6d11;}
+  .lead-pills .tag.tag-loan{background:var(--rose-soft); color:var(--brand);}
+  .lead-pills .tag.tag-ph{background:#e6eef6; color:#2d5a82;}
+  .lead-owner{font-size:12.5px; color:var(--text); font-weight:600; margin-top:9px; display:flex; align-items:center; gap:6px;}
+  .lead-owner svg{width:13px;height:13px;color:var(--mauve);}
   .lead-meta{display:flex; flex-wrap:wrap; gap:6px 12px; margin-top:7px;}
   .lead-meta span{font-size:12px; color:var(--muted); display:inline-flex; align-items:center; gap:5px;}
   .lead-meta svg{width:13px;height:13px;opacity:.7; color:var(--mauve);}
@@ -329,7 +340,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 29</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 30</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -835,25 +846,30 @@ function render(){
     const photo=leadPhotoEl(l);
     const gphone='https://www.google.com/search?q='+encodeURIComponent(((l.owner||'')+' '+l.address).trim())+'+phone';
     const phoneHref=l.phone?`href="tel:${l.phone.replace(/[^0-9+]/g,'')}"`:`href="${gphone}" target="_blank" rel="noopener"`;
+    const A=parseAddr(l.address);
+    const N=l.notes||'';
+    const bb=N.match(/(\d+)\s*bd\s*\/\s*(\d+)\s*ba/i);
+    const eq=(N.match(/equity\s*(\d+)%/i)||N.match(/(\d+)%\s*equity/i));
+    const occ=(N.match(/Absentee(?:\s*\([^)]*\))?/i)||[])[0];
+    const loan=(N.match(/\$(\d[\d.,]*k?)/i)||[])[0];
+    const sub=[(A.city?A.city+(A.state?', '+A.state:''):''), (l.county&&l.county!==A.city?l.county+' County':'')].filter(Boolean).join(' · ');
+    const pills=[];
+    pills.push(`<span class="tag tag-${l.status}">${l.status}</span>`);
+    if(occ) pills.push(`<span class="tag">${esc(occ)}</span>`);
+    if(eq) pills.push(`<span class="tag tag-eq">${eq[1]}% equity</span>`);
+    if(bb) pills.push(`<span class="tag">${bb[1]} bd · ${bb[2]} ba</span>`);
+    if(loan && l.source==='foreclosure') pills.push(`<span class="tag tag-loan">${esc(loan)} loan</span>`);
+    if(l.phone) pills.push(`<span class="tag tag-ph">has phone</span>`);
     return `<div class="lead ${cls}" onclick="openModal('${l.id}')">
       ${photo}
       <div class="lead-body">
-        <div class="lead-head">
-          <div style="min-width:0">
-            <div class="lead-addr">${esc(l.address)}</div>
-            <div class="lead-meta">
-              ${l.owner?`<span>${ICN.user}${esc(l.owner)}</span>`:''}
-              ${l.phone?`<span>${ICN.phone}${esc(l.phone)}</span>`:''}
-              ${l.saleDate?`<span>${ICN.cal}${esc(l.saleDate)}</span>`:''}
-            </div>
-            ${l.notes?`<div class="lead-note">${esc(l.notes)}</div>`:''}
-            ${!l.coords?`<div class="locating">📍 mapping… tap Locate</div>`:''}
-          </div>
-          <span class="badge b-${l.status}">${l.status}</span>
-        </div>
+        <div class="lead-addr">${esc(A.street||l.address)}</div>
+        <div class="lead-sub">${esc(sub)}${l.saleDate?` · <b>Sale ${esc(l.saleDate)}</b>`:''}</div>
+        <div class="lead-pills">${pills.join('')}</div>
+        ${l.owner?`<div class="lead-owner">${ICN.user}${esc(l.owner)}${l.phone?` · ${esc(l.phone)}`:''}</div>`:''}
+        ${!l.coords?`<div class="locating">📍 mapping… tap Locate</div>`:''}
         <div class="lead-actions" onclick="event.stopPropagation()">
           <a class="trace" ${phoneHref}>${ICN.phone}${l.phone?'Call':'Find phone'}</a>
-          <button onclick="openModal('${l.id}')">${ICN.edit}Edit</button>
           ${l.coords?`<button onclick="showOnMap('${l.id}')">${ICN.map}Map</button>`:''}
           <button class="del" onclick="delLead('${l.id}')">${ICN.trash}</button>
         </div>

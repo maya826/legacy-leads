@@ -344,7 +344,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 37</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 38</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -639,6 +639,16 @@ async function reverseGeocode(lat,lng){
   const city=a.city||a.town||a.village||a.hamlet||a.suburb||"";
   const st=a.state_code||a.state||"", zip=a.postcode||"";
   return [[num,road].filter(Boolean).join(" "), city, [st,zip].filter(Boolean).join(" ")].filter(Boolean).join(", ") || d.display_name || "";
+}
+async function enrichAddr(street, lat, lng){
+  let sstr=(street||'').replace(/\s+/g,' ').trim();
+  try{
+    const rg=await reverseGeocode(lat,lng);
+    const parts=(rg||'').split(',').map(x=>x.trim()).filter(Boolean);
+    if(sstr){ if(parts.length>=2) sstr=sstr+', '+parts.slice(1).join(', '); }
+    else { sstr=rg||sstr; }
+  }catch(e){}
+  return sstr;
 }
 async function forwardGeocode(address){
   // 1) ArcGIS World Geocoder — best US residential coverage, CORS-enabled, no token for single lookups
@@ -1034,7 +1044,7 @@ function initMap(){
 async function onMapClick(e){
   const {lat,lng}=e.latlng; pendingCoords={lat,lng};
   const info=await identifyParcel(e.latlng).catch(()=>({}));
-  let address=(info&&info.address)||""; if(!address){ try{ address=await reverseGeocode(lat,lng);}catch(err){} }
+  const address=await enrichAddr((info&&info.address)||"", lat, lng);
   openModal(null,{address, owner:(info&&info.owner)||""});
   if(info&&info.parcelId){ const n=document.getElementById('fNotes'); n.value=(n.value?n.value+' · ':'')+'Parcel '+info.parcelId; }
 }
@@ -1061,7 +1071,7 @@ function updateHouseLabels(){
       const key=num+'@'+c.lat.toFixed(5)+','+c.lng.toFixed(5); if(seen.has(key)) return; seen.add(key); count++;
       const addr=addrFrom(p)||''; const owner=ownerFrom(p)||'';
       L.marker(c,{icon:L.divIcon({className:'',html:`<div class="hpin">${num}</div>`,iconSize:[44,16],iconAnchor:[22,8]}),keyboard:false})
-        .on('click',ev=>{ if(ev&&ev.originalEvent) L.DomEvent.stop(ev.originalEvent); pendingCoords={lat:c.lat,lng:c.lng}; openModal(null,{address:addr,owner:owner}); })
+        .on('click',async ev=>{ if(ev&&ev.originalEvent) L.DomEvent.stop(ev.originalEvent); pendingCoords={lat:c.lat,lng:c.lng}; const full=await enrichAddr(addr,c.lat,c.lng); openModal(null,{address:full,owner:owner}); })
         .addTo(houseLabels);
     }); }catch(e){}
   });

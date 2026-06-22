@@ -319,6 +319,22 @@
   .dmpin::after{content:'';position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #fff;}
   .hpin{display:inline-block;background:#fff;color:#2C1E27;font-size:10px;font-weight:800;line-height:1;padding:2px 5px;border-radius:7px;border:1px solid rgba(108,43,69,.4);box-shadow:0 1px 3px rgba(44,30,39,.3);white-space:nowrap;cursor:pointer;}
   .hpin:hover{background:var(--brand);color:#fff;}
+  .pc-val{font-family:var(--serif),serif;font-size:26px;font-weight:700;color:var(--brand);line-height:1;margin:2px 0 5px;}
+  .pc-val span{font-family:'Inter',sans-serif;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-left:8px;}
+  .pc-addr{font-family:var(--serif),serif;font-size:21px;font-weight:700;color:var(--ink);line-height:1.15;}
+  .pc-pills{display:flex;flex-wrap:wrap;gap:6px;margin:9px 0;}
+  .pcpill{background:#F3E7EC;color:var(--brand);font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;}
+  .pcpill.eq{background:#E8F2E8;color:#2f7a43;}
+  .pc-rec{margin:12px 0;border:1px solid #eadfe4;border-radius:14px;overflow:hidden;}
+  .pc-rec-h{background:#F7F0F3;font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--brand);padding:8px 12px;}
+  .pc-rec-row{display:flex;justify-content:space-between;gap:12px;padding:9px 12px;border-top:1px solid #f0e6ea;font-size:13.5px;}
+  .pc-rec-row span{color:var(--muted);} .pc-rec-row b{color:var(--ink);text-align:right;}
+  .pc-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+  .pc-acts2{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center;}
+  .pc-trace{background:#F3E7EC;color:var(--brand);font-size:12px;font-weight:700;padding:6px 10px;border-radius:9px;text-decoration:none;}
+  .pc-del{margin-left:auto;background:none;border:none;color:#b14a63;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:4px;cursor:pointer;}
+  .pc-del svg{width:14px;height:14px;}
+  .pc-key{display:block;margin-top:8px;background:rgba(255,255,255,.9);color:var(--brand);border:none;font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;cursor:pointer;}
   .me{width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
   .me-core{width:15px;height:15px;border-radius:50%;background:var(--brand);border:3px solid #fff;box-shadow:0 0 0 0 rgba(108,43,69,.4);animation:pulse 1.7s infinite;}
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(108,43,69,.4)}70%{box-shadow:0 0 0 18px rgba(108,43,69,0)}100%{box-shadow:0 0 0 0 rgba(108,43,69,0)}}
@@ -344,7 +360,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 39</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 40</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -380,12 +396,12 @@
     <div class="fc-wrap">
       <div class="hero">
         <h2>Free lead sources</h2>
-        <p>Every free, public source for distressed and motivated-seller leads in your markets. Open one, copy the list, and paste it below to drop the leads onto your map.</p>
+        <p>This tab fills your map with motivated-seller leads — for free. Tap the big button to instantly drop every current Georgia, Alabama &amp; Florida foreclosure auction onto your <b>Map</b> and <b>Leads</b> (no file, no cost). The lists below it are extra free public sources you can open, copy, and paste in.</p>
       </div>
 
       <div class="card" style="border-color:var(--fc);">
-        <div class="card-h"><div class="step" style="background:var(--fc);">GA</div><div><h3>Live foreclosures — ready now</h3><p>Georgia, Alabama &amp; Florida auctions · refreshed monthly · no file</p></div></div>
-        <button class="fc-go" id="loadFC" style="margin-top:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Add current GA · AL · FL foreclosures to my map</button>
+        <div class="card-h"><div class="step" style="background:var(--fc);">GA</div><div><h3>Live foreclosures — ready now</h3><p>One tap = ~860 current GA · AL · FL auction leads on your map. Refreshed monthly. Start here.</p></div></div>
+        <button class="fc-go" id="loadFC" style="margin-top:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Drop all current foreclosures onto my map</button>
       </div>
 
       <div class="card">
@@ -567,9 +583,13 @@ const HOUSE_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
 const XSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>';
 function aerialUrl(lat,lng,w,h){ const d=0.00085; const b=[lng-d,lat-d,lng+d,lat+d].join(','); return 'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/export?bbox='+b+'&bboxSR=4326&imageSR=4326&size='+w+','+h+'&format=jpg&f=image'; }
 window.imgFail=function(img){ try{ img.outerHTML='<div class="lead-photoph">'+HOUSE_SVG+'</div>'; }catch(e){} };
+function gsvKey(){ try{ return localStorage.getItem('ll_gsvkey')||''; }catch(e){ return ''; } }
+function streetUrl(lat,lng,w,h){ const k=gsvKey(); if(!k) return ''; return 'https://maps.googleapis.com/maps/api/streetview?size='+w+'x'+h+'&location='+lat+','+lng+'&fov=72&pitch=6&source=outdoor&key='+encodeURIComponent(k); }
+function propUrl(l,w,h){ if(l&&l.photo) return l.photo; if(l&&l.coords){ const sv=streetUrl(l.coords.lat,l.coords.lng,w,h); if(sv) return sv; } return ''; }
+window.setGsvKey=function(){ const k=prompt('Paste your free Google Street View Static API key to show real house photos (like DealMachine). Leave blank to skip.'); if(k&&k.trim()){ try{ localStorage.setItem('ll_gsvkey',k.trim()); }catch(e){} toast('Photo key saved ✓'); render(); } };
 function leadPhotoEl(l){
-  if(l.photo) return '<img class="lead-photo" src="'+l.photo+'" loading="lazy">';
-  if(l.coords) return '<img class="lead-photo" loading="lazy" src="'+aerialUrl(l.coords.lat,l.coords.lng,460,300)+'" onerror="imgFail(this)">';
+  const u=propUrl(l,460,300);
+  if(u) return '<img class="lead-photo" loading="lazy" src="'+u+'" onerror="imgFail(this)">';
   return '<div class="lead-photoph">'+HOUSE_SVG+'</div>';
 }
 
@@ -881,7 +901,7 @@ function render(){
     if(typeof l.fmv==='number'&&l.fmv>0){ hv='$'+l.fmv.toLocaleString(); hl='fair market value'; }
     else if(dollar){ hv=dollar.replace(/\s+/g,''); hl=vlbl; }
     const ownerDisp=l.owner||l.ownerRec||'';
-    return `<div class="lead ${cls}" data-fid="${l.id}" onclick="openModal('${l.id}')">
+    return `<div class="lead ${cls}" data-fid="${l.id}" onclick="openPropSheet('${l.id}')">
       ${photo}
       <div class="lead-body">
         ${hv?`<div class="lead-val">${esc(hv)}<span>${hl}</span></div>`:''}
@@ -1161,24 +1181,55 @@ function renderMap(fit){
 window.showOnMap=function(id){ switchView('mapView'); const l=leads.find(x=>x.id===id); if(l&&l.coords&&map) setTimeout(()=>map.setView([l.coords.lat,l.coords.lng],17),140); };
 window.openPropSheet=function(id){
   const l=leads.find(x=>x.id===id); if(!l) return;
-  const eq=((l.notes||'').match(/Equity\s*\d+%/)||[''])[0];
-  const sub=[l.county, (l.address.split(',').slice(1).join(',').trim())].filter(Boolean).join(' · ') || l.status;
+  if(l.fmv===undefined && typeof COUNTY_GIS!=='undefined' && COUNTY_GIS[leadCounty(l)]){ fetchFMVfor(l).then(()=>{ try{save();}catch(e){} if(document.getElementById('propBg').classList.contains('show')) openPropSheet(id); }).catch(()=>{}); }
+  const A=parseAddr(l.address); const N=l.notes||'';
+  const bb=N.match(/(\d+)\s*bd\s*\/\s*(\d+)\s*ba/i);
+  const eqp=(N.match(/equity\s*(\d+)%/i)||N.match(/(\d+)%\s*equity/i));
+  const occ=(N.match(/Absentee(?:\s*\([^)]*\))?/i)||[])[0];
+  const dollar=(N.match(/\$[\d.,]+\s*k?/i)||[])[0];
   const tel=(l.phone||'').replace(/[^0-9+]/g,'');
-  const pbg=l.photo?l.photo:(l.coords?aerialUrl(l.coords.lat,l.coords.lng,620,320):'');
-  const photoStyle=pbg?`style="background-image:url('${pbg}')"`:'';
+  const ownerDisp=l.owner||l.ownerRec||'';
+  const mail=l.mailing||l.mailRec||'';
+  const pbg=propUrl(l,640,360);
+  const traces=traceUrls(ownerDisp,l.address);
+  const zill=traces.find(t=>/zillow/i.test(t.label))||traces[0];
+  const goog=traces.find(t=>/google/i.test(t.label));
+  let valHTML='';
+  if(typeof l.fmv==='number'&&l.fmv>0) valHTML=`<div class="pc-val">$${l.fmv.toLocaleString()}<span>fair market value</span></div>`;
+  else if(dollar) valHTML=`<div class="pc-val">${esc(dollar.replace(/\s+/g,''))}<span>${/judgment/i.test(N)?'judgment':(l.source==='foreclosure'?'loan balance':'')}</span></div>`;
+  const pills=[`<span class="badge b-${l.status}">${l.status}</span>`];
+  if(occ) pills.push(`<span class="pcpill">${esc(occ)}</span>`);
+  if(eqp) pills.push(`<span class="pcpill eq">${eqp[1]}% equity</span>`);
+  if(bb) pills.push(`<span class="pcpill">${bb[1]} bd · ${bb[2]} ba</span>`);
+  const rec=[];
+  if(typeof l.fmv==='number'&&l.fmv>0) rec.push(['Fair market value','$'+l.fmv.toLocaleString()]);
+  if(eqp) rec.push(['Equity',eqp[1]+'%']);
+  if(l.saleDate) rec.push(['Sale date',esc(l.saleDate)]);
+  if(dollar&&l.source==='foreclosure') rec.push([/judgment/i.test(N)?'Judgment':'Loan balance',esc(dollar.replace(/\s+/g,''))]);
+  if(mail) rec.push(['Owner mailing',esc(mail)]);
+  if(l.county) rec.push(['County',esc((l.county+'').replace(/county/i,'').trim())]);
+  const sub=[(A.city?A.city+(A.state?', '+A.state:''):''),(l.county&&l.county!==A.city?(l.county+'').replace(/county/i,'').trim()+' County':'')].filter(Boolean).join(' · ');
   document.getElementById('propBody').innerHTML=`
-    <div class="pc-photo" ${photoStyle}>
-      ${pbg?'':`<div class="pc-ph">${HOUSE_SVG}</div>`}
+    <div class="pc-photo" ${pbg?`style="background-image:url('${pbg}')"`:''}>
+      ${pbg?'':`<div class="pc-ph">${HOUSE_SVG}${gsvKey()?'':'<button class="pc-key" onclick="event.stopPropagation();setGsvKey()">+ add real photos</button>'}</div>`}
       <button class="pc-x" onclick="closePropSheet()">${XSVG}</button>
-      ${eq?`<span class="pc-eq">${eq}</span>`:''}
     </div>
     <div class="pc-body">
-      <div class="pc-top"><div class="pc-addr">${esc(l.address.split(',')[0])}</div><span class="badge b-${l.status}">${l.status}</span></div>
-      <div class="pc-sub">${esc(sub)}</div>
-      ${l.owner?`<div class="pc-own">${ICN.user}${esc(l.owner)}</div>`:''}
+      ${valHTML}
+      <div class="pc-addr">${esc(A.street||l.address)}</div>
+      <div class="pc-sub">${esc(sub)}${l.saleDate?` · <b>Sale ${esc(l.saleDate)}</b>`:''}</div>
+      <div class="pc-pills">${pills.join('')}</div>
+      ${ownerDisp?`<div class="pc-own">${ICN.user}${esc(ownerDisp)}</div>`:''}
+      ${rec.length?`<div class="pc-rec"><div class="pc-rec-h">County records</div>${rec.map(r=>`<div class="pc-rec-row"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('')}</div>`:''}
       <div class="pc-acts">
-        <button class="ghost" onclick="closePropSheet();openModal('${l.id}')">${ICN.edit}Details</button>
-        ${tel?`<a class="call" href="tel:${tel}">${ICN.phone}Call</a>`:`<button class="call" onclick="closePropSheet();openModal('${l.id}')">${ICN.phone}Add phone</button>`}
+        ${tel?`<a class="call" href="tel:${tel}">${ICN.phone}Call</a>`:`<a class="call" href="${goog?goog.url:'#'}" target="_blank" rel="noopener">${ICN.phone}Find phone</a>`}
+        <a class="ghost" href="${zill?zill.url:'#'}" target="_blank" rel="noopener">🏠 Zillow</a>
+        ${l.coords?`<button class="ghost" onclick="closePropSheet();showOnMap('${l.id}')">${ICN.map}Map</button>`:''}
+        <button class="ghost" onclick="closePropSheet();openModal('${l.id}')">${ICN.edit}Edit</button>
+      </div>
+      <div class="pc-acts2">
+        ${traces.filter(t=>!/zillow|google/i.test(t.label)).map(t=>`<a class="pc-trace" href="${t.url}" target="_blank" rel="noopener">${esc(t.label)}</a>`).join('')}
+        <button class="pc-del" onclick="closePropSheet();delLead('${l.id}')">${ICN.trash}Delete</button>
       </div>
     </div>`;
   document.getElementById('propBg').classList.add('show');

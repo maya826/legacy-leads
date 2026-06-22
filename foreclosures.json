@@ -8566,5 +8566,250 @@
 "status": "Foreclosure",
 "saleDate": "06/25/2026",
 "notes": "FL foreclosure 06/25/2026 · Judgment $48,066.84 · Assessed $318,310.00"
+},
+{
+"address": "1160 ELM STREET, OVIEDO, FL 32765",
+"county": "Seminole",
+"status": "Foreclosure",
+"saleDate": "06/30/2026",
+"notes": "FL foreclosure 06/30/2026 · Judgment $180,408.24"
+},
+{
+"address": "1520 EDENHALL PT, LAKE MARIE, FL 32746",
+"county": "Seminole",
+"status": "Foreclosure",
+"saleDate": "06/30/2026",
+"notes": "FL foreclosure 06/30/2026 · Judgment $1,503,600.20 · Assessed $981,517.00"
+},
+{
+"address": "631 PRAIRIE LANE, ALTAMONTE SPRINGS, FL 32714",
+"county": "Seminole",
+"status": "Foreclosure",
+"saleDate": "06/30/2026",
+"notes": "FL foreclosure 06/30/2026 · Judgment $398,386.79 · Assessed $383,868.00"
+},
+{
+"address": "624 BONITA RD, WINTER SPRINGS, FL 32708",
+"county": "Seminole",
+"status": "Foreclosure",
+"saleDate": "06/30/2026",
+"notes": "FL foreclosure 06/30/2026 · Judgment $198,842.46 · Assessed $134,827.00"
+},
+{
+"address": "717 S LOCUST AVE, SANFORD, FL 32771",
+"county": "Seminole",
+"status": "Foreclosure",
+"saleDate": "06/30/2026",
+"notes": "FL foreclosure 06/30/2026 · Judgment $186,605.80"
+},
+{
+"address": "230 CROWN OAKS WAY, LONGWOOD, FL 32779",
+"county": "Seminole",
+"status": "Foreclosure",
+"saleDate": "06/30/2026",
+"notes": "FL foreclosure 06/30/2026 · Judgment $10,615.21 · Assessed $88,175.00"
+},
+{
+"address": "2453 BROADWAY & 2220 CHURCH ST, SANFORD, FL 32771",
+"county": "Seminole",
+"status": "Foreclosure",
+"saleDate": "06/30/2026",
+"notes": "FL foreclosure 06/30/2026 · Judgment $86,549.01"
+},
+{
+"address": "214 CADILLAC CT, ALTAMONTE SPRINGS, FL 32701",
+"county": "Seminole",
+"status": "Foreclosure",
+"saleDate": "06/30/2026",
+"notes": "FL foreclosure 06/30/2026 · Judgment $178,117.98 · Assessed $87,181.00"
+},
+{
+"address": "16720 SCENIC HILL WAY, WIMAUMA, FL 33598",
+"county": "Hillsborough",
+"status": "Foreclosure",
+"saleDate": "06/26/2026",
+"notes": "FL foreclosure 06/26/2026 · Judgment $6,009.05 · Assessed $182,138.00"
+},
+{
+"address": "12910 KINGS LAKE DR, GIBSONTON, FL 33534",
+"county": "Hillsborough",
+"status": "Foreclosure",
+"saleDate": "06/26/2026",
+"notes": "FL foreclosure 06/26/2026 · Judgment $11,805.79 · Assessed $254,500.00"
+},
+{
+"address": "16722 SCENIC HILL WAY, WIMAUMA, FL 33598",
+"county": "Hillsborough",
+"status": "Foreclosure",
+"saleDate": "06/26/2026",
+"notes": "FL foreclosure 06/26/2026 · Judgment $9,697.80 · Assessed $276,688.00"
+},
+{
+"address": "319 COUNTRY VINEYARD DR, VALRICO, FL 33594",
+"county": "Hillsborough",
+"status": "Foreclosure",
+"saleDate": "06/26/2026",
+"notes": "FL foreclosure 06/26/2026 · Judgment $6,172.02 · Assessed $363,202.00"
+},
+{
+"address": "13243 GREAT PLAINS DR, RIVERVIEW, FL 33579",
+"county": "Hillsborough",
+"status": "Foreclosure",
+"saleDate": "06/26/2026",
+"notes": "FL foreclosure 06/26/2026 · Judgment $13,551.17 · Assessed $303,429.00"
+},
+{
+"address": "17029 PEACEFUL VALLEY DR, WIMAUMA, FL 33598",
+"county": "Hillsborough",
+"status": "Foreclosure",
+"saleDate": "06/26/2026",
+"notes": "FL foreclosure 06/26/2026 · Judgment $312,604.59 · Assessed $272,227.00"
+},
+{
+"address": "13712 HALLIFORD DR, TAMPA, FL 33624",
+"county": "Hillsborough",
+"status": "Foreclosure",
+"saleDate": "06/22/2026",
+"notes": "FL foreclosure 06/22/2026 · Judgment $1,007,214.37 · Assessed $651,701.00"
+},
+{
+"address": "6608 NORTHHAVEN CT, RIVERVIEW, FL 33578",
+"county": "Hillsborough",
+"status": "Foreclosure",
+"saleDate": "06/22/2026",
+"notes": "FL foreclosure 06/22/2026 · Judgment $346,556.61 · Assessed $216,588.00"
+},
+{
+"address": "3532 JOHN MOORE RD, BRANDON, FL 33511",
+"county": "Hillsborough",
+"status": "Foreclosure",
+"saleDate": "06/22/2026",
+"notes": "FL foreclosure 06/22/2026 · Judgment $206,690.82 · Assessed $350,754.00"
+},
+{
+"address": "1009 E NORTH BAY ST, TAMPA, FL 33603",
+"county": "Hillsborough",
+"status": "Foreclosure",
+"saleDate": "06/22/2026",
+"notes": "FL foreclosure 06/22/2026 · Judgment $227,250.24 · Assessed $203,837.00"
+},
+{
+"address": "11811 GILMERTON DR, RIVERVIEW, FL 33579",
+"county": "Hillsborough",
+"status": "Foreclosure",
+"saleDate": "06/22/2026",
+"notes": "FL foreclosure 06/22/2026 · Judgment $477,621.22 · Assessed $645,571.00"
+},
+{
+"address": "2408 W CARMEN ST, TAMPA, FL 33609",
+"county": "Hillsborough",
+"status": "Foreclosure",
+"saleDate": "06/22/2026",
+"notes": "FL foreclosure 06/22/2026 · Judgment $58,528.12 · Assessed $327,980.00"
+},
+{
+"address": "5104 W EVELYN DR, TAMPA, FL 33609",
+"county": "Hillsborough",
+"status": "Foreclosure",
+"saleDate": "06/22/2026",
+"notes": "FL foreclosure 06/22/2026 · Judgment $2,577,130.90 · Assessed $1,818,816.00"
+},
+{
+"address": "866 KINGS PINE CT, RUSKIN, FL 33570",
+"county": "Hillsborough",
+"status": "Foreclosure",
+"saleDate": "06/22/2026",
+"notes": "FL foreclosure 06/22/2026 · Judgment $433,685.41 · Assessed $274,575.00"
+},
+{
+"address": "3921 W CHERRY ST, TAMPA, FL 33607",
+"county": "Hillsborough",
+"status": "Foreclosure",
+"saleDate": "06/22/2026",
+"notes": "FL foreclosure 06/22/2026 · Judgment $239,101.90 · Assessed $194,590.00"
+},
+{
+"address": "12725 SUNLAND CT, TAMPA, FL 33625",
+"county": "Hillsborough",
+"status": "Foreclosure",
+"saleDate": "06/22/2026",
+"notes": "FL foreclosure 06/22/2026 · Judgment $353,702.94 · Assessed $287,948.00"
+},
+{
+"address": "3000 36TH AVE S, ST PETERSBURG, FL 33712",
+"county": "Pinellas",
+"status": "Foreclosure",
+"saleDate": "06/25/2026",
+"notes": "FL foreclosure 06/25/2026 · Judgment $371,185.76 · Assessed $134,106.00"
+},
+{
+"address": "950 9TH AVE S, ST PETERSBURG, FL 33705",
+"county": "Pinellas",
+"status": "Foreclosure",
+"saleDate": "06/25/2026",
+"notes": "FL foreclosure 06/25/2026 · Judgment $299,759.67 · Assessed $33,260.00"
+},
+{
+"address": "11479 WALSINGHAM RD, SEMINOLE, FL 33778",
+"county": "Pinellas",
+"status": "Foreclosure",
+"saleDate": "06/25/2026",
+"notes": "FL foreclosure 06/25/2026 · Judgment $290,287.02 · Assessed $183,911.00"
+},
+{
+"address": "227 WOODLAKE WYNDE, OLDSMAR, FL 34677",
+"county": "Pinellas",
+"status": "Foreclosure",
+"saleDate": "06/25/2026",
+"notes": "FL foreclosure 06/25/2026 · Judgment $154,441.00 · Assessed $158,621.00"
+},
+{
+"address": "2998 CYPRESS GREEN DR, PALM HARBOR, FL 34684",
+"county": "Pinellas",
+"status": "Foreclosure",
+"saleDate": "06/25/2026",
+"notes": "FL foreclosure 06/25/2026 · Judgment $256,215.67 · Assessed $307,916.00"
+},
+{
+"address": "608 2ND ST SW, LARGO, FL 33770",
+"county": "Pinellas",
+"status": "Foreclosure",
+"saleDate": "06/25/2026",
+"notes": "FL foreclosure 06/25/2026 · Judgment $345,673.07 · Assessed $383,175.00"
+},
+{
+"address": "1410 PARK ST, CLEARWATER, FL 33755",
+"county": "Pinellas",
+"status": "Foreclosure",
+"saleDate": "06/25/2026",
+"notes": "FL foreclosure 06/25/2026 · Judgment $2,157,177.47 · Assessed $1,080,000.00"
+},
+{
+"address": "734 44TH AVE NE, SAINT PETERSBURG, FL 33703",
+"county": "Pinellas",
+"status": "Foreclosure",
+"saleDate": "06/25/2026",
+"notes": "FL foreclosure 06/25/2026 · Judgment $198,145.56"
+},
+{
+"address": "3249 TRASK DR, HOLIDAY, FL 34691",
+"county": "Pasco",
+"status": "Foreclosure",
+"saleDate": "06/23/2026",
+"notes": "FL foreclosure 06/23/2026 · Judgment $225,043.33"
+},
+{
+"address": "6510 ELEANOR DRIVE, PORT RICHEY, FL 34668",
+"county": "Pasco",
+"status": "Foreclosure",
+"saleDate": "06/23/2026",
+"notes": "FL foreclosure 06/23/2026 · Judgment $32,753.23"
+},
+{
+"address": "8128 CAMERON CAY POINT, NEW PORT RICHEY, FL 34653",
+"county": "Pasco",
+"status": "Foreclosure",
+"saleDate": "06/23/2026",
+"notes": "FL foreclosure 06/23/2026 · Judgment $219,684.00"
 }
 ]

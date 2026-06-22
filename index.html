@@ -300,6 +300,10 @@
   .marker-cluster div{background:var(--brand)!important; color:#fff!important; font-weight:800!important; font-family:'Inter',sans-serif!important;}
 
   /* live driving map */
+  .dmpin{display:flex;align-items:center;gap:3px;background:var(--brand);color:#fff;font-size:11px;font-weight:800;line-height:1;padding:5px 8px 5px 6px;border-radius:9px;white-space:nowrap;border:1.5px solid #fff;box-shadow:0 2px 6px rgba(44,30,39,.4);position:relative;}
+  .dmpin.fc{background:var(--brand);} .dmpin.dr{background:#9b5277;}
+  .dmpin svg{width:11px;height:11px;stroke:#fff;stroke-width:2.4;fill:none;}
+  .dmpin::after{content:'';position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #fff;}
   .me{width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
   .me-core{width:15px;height:15px;border-radius:50%;background:var(--brand);border:3px solid #fff;box-shadow:0 0 0 0 rgba(108,43,69,.4);animation:pulse 1.7s infinite;}
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(108,43,69,.4)}70%{box-shadow:0 0 0 18px rgba(108,43,69,0)}100%{box-shadow:0 0 0 0 rgba(108,43,69,0)}}
@@ -325,7 +329,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 28</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 29</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -1028,13 +1032,19 @@ document.addEventListener('click', e=>{
     toast(parcelsOn?"Lot lines on":"Lot lines off");
   }
 });
+function houseNum(a){ const m=(a||'').match(/^\s*(\d+)/); return m?m[1]:''; }
+function dmPin(l){
+  const num=houseNum(l.address)||'\u2022';
+  const cls=l.source==='foreclosure'?'fc':'dr';
+  return L.divIcon({className:'', html:`<div class="dmpin ${cls}"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>${num}</div>`, iconSize:[44,28], iconAnchor:[22,28], popupAnchor:[0,-26]});
+}
 function dot(color){ return L.divIcon({className:'',html:`<div style="width:18px;height:18px;border-radius:50%;background:${color};border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.6)"></div>`,iconSize:[18,18],iconAnchor:[9,9]}); }
 function renderMap(fit){
   if(!map) return; markerLayer.clearLayers();
   const pts=leads.filter(l=>l.coords && leadMatch(l));
   const batch=[];
   pts.forEach(l=>{
-    const m=L.marker([l.coords.lat,l.coords.lng],{icon:dot(l.source==='foreclosure'?'#B23A6A':(l.source==='driving'?'#6C2B45':'#8a3a59'))});
+    const m=L.marker([l.coords.lat,l.coords.lng],{icon:dmPin(l)});
     m.on('click',()=>openPropSheet(l.id));
     batch.push(m);
   });

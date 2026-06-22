@@ -239,7 +239,7 @@
     box-shadow:0 -12px 40px rgba(44,30,39,.28); animation:slideUp .3s cubic-bezier(.16,1,.3,1); margin-bottom:62px;
   }
   .prop-card .grab{width:40px;height:4px;border-radius:4px;background:#e0d0da;margin:9px auto 0;}
-  .prop-card .pc-photo{height:150px; background:linear-gradient(135deg,#E7D6E0,#D9C2CF) center/cover no-repeat; position:relative;}
+  .prop-card .pc-photo{height:210px; background:linear-gradient(135deg,#E7D6E0,#D9C2CF) center center/cover no-repeat; background-position:center 42%; position:relative;}
   .prop-card .pc-photo .pc-x{position:absolute; top:10px; right:10px; width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.92);border:none;display:flex;align-items:center;justify-content:center;color:var(--brand);}
   .prop-card .pc-photo .pc-x svg{width:17px;height:17px;}
   .prop-card .pc-photo .pc-eq{position:absolute; bottom:10px; left:12px; background:rgba(255,255,255,.95); color:var(--brand); font-size:11px; font-weight:800; padding:5px 11px; border-radius:8px;}
@@ -367,7 +367,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 42</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 43</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -592,7 +592,7 @@ const XSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wi
 function aerialUrl(lat,lng,w,h){ const d=0.00085; const b=[lng-d,lat-d,lng+d,lat+d].join(','); return 'https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/export?bbox='+b+'&bboxSR=4326&imageSR=4326&size='+w+','+h+'&format=jpg&f=image'; }
 window.imgFail=function(img){ try{ img.outerHTML='<div class="lead-photoph">'+HOUSE_SVG+'</div>'; }catch(e){} };
 function gsvKey(){ try{ return localStorage.getItem('ll_gsvkey')||''; }catch(e){ return ''; } }
-function streetUrl(lat,lng,w,h){ const k=gsvKey(); if(!k) return ''; return 'https://maps.googleapis.com/maps/api/streetview?size='+w+'x'+h+'&location='+lat+','+lng+'&fov=72&pitch=6&source=outdoor&key='+encodeURIComponent(k); }
+function streetUrl(lat,lng,w,h){ const k=gsvKey(); if(!k) return ''; return 'https://maps.googleapis.com/maps/api/streetview?size=640x400&location='+lat+','+lng+'&fov=88&pitch=0&source=outdoor&key='+encodeURIComponent(k); }
 function propUrl(l,w,h){ if(l&&l.photo) return l.photo; if(l&&l.coords){ const sv=streetUrl(l.coords.lat,l.coords.lng,w,h); if(sv) return sv; } return ''; }
 window.setGsvKey=function(){ const k=prompt('Paste your free Google Street View Static API key to show real house photos (like DealMachine). Leave blank to skip.'); if(k&&k.trim()){ try{ localStorage.setItem('ll_gsvkey',k.trim()); }catch(e){} toast('Photo key saved ✓'); render(); } };
 function leadPhotoEl(l){

@@ -325,7 +325,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 26</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 27</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -557,21 +557,29 @@ function leadPhotoEl(l){
 /* skip-trace deep links */
 function traceUrls(owner, address){
   const name=(owner||'').trim();
-  const o=encodeURIComponent(name);
-  const oa=encodeURIComponent((name+' '+(address||'')).trim());
+  const A=parseAddr(address);
+  const cs=[A.city,A.state].filter(Boolean).join(', ');
+  const csZip=[cs,A.zip].filter(Boolean).join(' ');
   const addrEnc=encodeURIComponent((address||'').trim());
-  const city=cityOf({address:address})||'';
-  const stM=(address||'').match(/\b(GA|AL|FL|[A-Z]{2})\s*\d{5}/); const st=stM?stM[1]:'';
-  const cs=[city,st].filter(Boolean).join(', ');
-  const nameSlug=name.replace(/\s+/g,'-').toLowerCase();
-  const csSlug=[city.replace(/\s+/g,'-'),st].filter(Boolean).join('-').toLowerCase();
-  return [
-    {label:'\ud83c\udfe0 Zillow', url:`https://www.zillow.com/homes/${addrEnc}_rb/`},
-    {label:'Google', url:`https://www.google.com/search?q=${oa}+phone`},
-    {label:'TruePeople', url:`https://www.truepeoplesearch.com/results?name=${o}`+(cs?`&citystatezip=${encodeURIComponent(cs)}`:'')},
-    {label:'FastPeople', url:`https://www.fastpeoplesearch.com/name/${nameSlug}`+(csSlug?`_${csSlug}`:'')},
-    {label:'Whitepages', url:`https://www.whitepages.com/name/${name.replace(/\s+/g,'-')}`+(cs?`/${city.replace(/\s+/g,'-')}-${st}`:'')}
-  ];
+  const dash=x=>(x||'').trim().replace(/[^a-z0-9]+/gi,'-').replace(/^-+|-+$/g,'').toLowerCase();
+  const out=[{label:'\ud83c\udfe0 Zillow', url:`https://www.zillow.com/homes/${addrEnc}_rb/`}];
+  if(name){
+    const o=encodeURIComponent(name);
+    out.push(
+      {label:'Google', url:`https://www.google.com/search?q=${encodeURIComponent(name+' '+(address||''))}+phone`},
+      {label:'TruePeople', url:`https://www.truepeoplesearch.com/results?name=${o}`+(cs?`&citystatezip=${encodeURIComponent(cs)}`:'')},
+      {label:'FastPeople', url:`https://www.fastpeoplesearch.com/name/${dash(name)}`+(A.city?`_${dash(A.city)}-${A.state.toLowerCase()}`:'')},
+      {label:'Whitepages', url:`https://www.whitepages.com/name/${dash(name)}`+(cs?`/${dash(A.city)}-${A.state}`:'')}
+    );
+  } else {
+    out.push(
+      {label:'Google', url:`https://www.google.com/search?q=${addrEnc}+owner+phone`},
+      {label:'TruePeople (addr)', url:`https://www.truepeoplesearch.com/resultaddress?streetaddress=${encodeURIComponent(A.street)}&citystatezip=${encodeURIComponent(csZip)}`},
+      {label:'FastPeople (addr)', url:`https://www.fastpeoplesearch.com/address/${dash(A.street)}_${dash(A.city)}-${A.state.toLowerCase()}`},
+      {label:'Whitepages (addr)', url:`https://www.whitepages.com/address/${dash(A.street)}/${dash(A.city)}-${A.state}`}
+    );
+  }
+  return out;
 }
 
 /* live location tracking + capture (DealMachine-style) */
@@ -848,6 +856,15 @@ function render(){
       </div>
     </div>`;}).join('');
   renderMap();
+}
+function parseAddr(a){
+  a=(a||'').trim();
+  const zm=a.match(/\b(\d{5})\b\s*$/); const zip=zm?zm[1]:'';
+  const stm=a.match(/\b(GA|AL|FL|[A-Z]{2})\s*\d{5}\s*$/); const state=stm?stm[1]:'';
+  const city=cityOf({address:a})||'';
+  let street=a.replace(/,?\s*[A-Z]{2}\s*\d{5}\s*$/i,'').trim().replace(/,\s*$/,'').trim();
+  if(city){ street=street.replace(new RegExp(',?\\s*'+city.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*$','i'),'').trim(); }
+  return {street, city, state, zip};
 }
 function parseSaleDate(s){ const m=(s||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); return m?new Date(+m[3],+m[1]-1,+m[2]):null; }
 function cityOf(l){

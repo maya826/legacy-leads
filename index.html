@@ -372,7 +372,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 45</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 46</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -393,6 +393,7 @@
       <button class="btn" id="exportCsv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Export</button>
       <input type="file" id="csvFile" accept=".csv,text/csv" style="display:none">
     </div>
+    <div class="daterow"><div class="clbl"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M15 9h.01M9 13h.01M15 13h.01"/></svg>Filter by state</div><div class="citywrap"><select id="stateFilter"><option value="">All states</option></select></div></div>
     <div class="cityrow"><div class="clbl"><svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Filter by city — tap to choose your market</div><div class="citywrap"><select id="cityFilter"><option value="">All cities</option></select></div></div>
     <div class="daterow"><div class="clbl"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>Filter by sale date</div><div class="citywrap"><select id="dateFilter"><option value="">All dates</option></select></div></div>
     <div class="filterbar">
@@ -576,7 +577,7 @@ window.loadBundledFC=async function(){
   }, 700);
 };
 let leads = load();
-let editingId = null, pendingCoords = null, modalStatus = "New", leadFilter=(localStorage.getItem('ll_filter')||'houses'), leadSearch='', leadCity=(localStorage.getItem('ll_city')||''), leadDate=(localStorage.getItem('ll_date')||''), pendingPhoto='';
+let editingId = null, pendingCoords = null, modalStatus = "New", leadFilter=(localStorage.getItem('ll_filter')||'houses'), leadSearch='', leadCity=(localStorage.getItem('ll_city')||''), leadState=(localStorage.getItem('ll_state')||''), leadDate=(localStorage.getItem('ll_date')||''), pendingPhoto='';
 let map, markerLayer;
 
 function load(){ try{ return JSON.parse(localStorage.getItem(KEY)) || []; }catch(e){ return []; } }
@@ -885,6 +886,7 @@ function render(){
   document.getElementById('sDrive').textContent=leads.filter(l=>l.source==='driving').length;
   document.getElementById('sHot').textContent=leads.filter(l=>!l.phone && l.status!=='Pass').length;
   buildFilterChips();
+  buildStateFilter();
   buildCityFilter();
   buildDateFilter();
   const wrap=document.getElementById('leadList');
@@ -1012,6 +1014,7 @@ function isHouse(l){
   return true;
 }
 function leadMatch(l){
+  if(leadState && stateOf(l)!==leadState) return false;
   if(leadCity && cityOf(l).toUpperCase()!==leadCity) return false;
   if(leadDate){
     const sd=l.saleDate||'';
@@ -1035,10 +1038,18 @@ function buildDateFilter(){
   html+=dates.map(d=>`<option value="${d}" ${leadDate===d?'selected':''}>${d} (${counts[d]})</option>`).join('');
   sel.innerHTML=html;
 }
+function stateOf(l){ const A=parseAddr(l.address||''); let st=(A.state||'').toUpperCase(); if(st) return st; const m=(l.address||'').match(/\b(GA|AL|FL)\b/i); return m?m[1].toUpperCase():''; }
+function buildStateFilter(){
+  const sel=document.getElementById('stateFilter'); if(!sel) return;
+  const counts={}; leads.forEach(l=>{ const st=stateOf(l); if(st) counts[st]=(counts[st]||0)+1; });
+  const NAMES={GA:'Georgia',AL:'Alabama',FL:'Florida'};
+  const order=['GA','AL','FL'].filter(k=>counts[k]).concat(Object.keys(counts).filter(k=>!['GA','AL','FL'].includes(k)));
+  sel.innerHTML='<option value="">All states ('+leads.length+')</option>'+order.map(k=>`<option value="${k}" ${leadState===k?'selected':''}>${NAMES[k]||k} (${counts[k]})</option>`).join('');
+}
 function buildCityFilter(){
   const sel=document.getElementById('cityFilter'); if(!sel) return;
   const counts={};
-  leads.forEach(l=>{ const c=cityOf(l); if(c){ const k=c.toUpperCase(); counts[k]=(counts[k]||0)+1; } });
+  leads.forEach(l=>{ if(leadState && stateOf(l)!==leadState) return; const c=cityOf(l); if(c){ const k=c.toUpperCase(); counts[k]=(counts[k]||0)+1; } });
   const cities=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]||a.localeCompare(b));
   const tc=str=>str.replace(/\w\S*/g,w=>w[0].toUpperCase()+w.slice(1).toLowerCase());
   sel.innerHTML='<option value="">All cities ('+leads.length+')</option>'+cities.map(k=>`<option value="${k}" ${leadCity===k?'selected':''}>${tc(k)} (${counts[k]})</option>`).join('');
@@ -1056,6 +1067,7 @@ function compressImg(file, cb){
 }
 (function(){
   const s=document.getElementById('leadSearch'); if(s) s.addEventListener('input',e=>{ leadSearch=e.target.value.toLowerCase().trim(); render(); });
+  const sf=document.getElementById('stateFilter'); if(sf) sf.addEventListener('change',e=>{ leadState=e.target.value; leadCity=''; try{localStorage.setItem('ll_state',leadState); localStorage.setItem('ll_city','');}catch(e4){} render(); });
   const cf=document.getElementById('cityFilter'); if(cf) cf.addEventListener('change',e=>{ leadCity=e.target.value; try{localStorage.setItem('ll_city',leadCity);}catch(e2){} render(); });
   const df=document.getElementById('dateFilter'); if(df) df.addEventListener('change',e=>{ leadDate=e.target.value; try{localStorage.setItem('ll_date',leadDate);}catch(e3){} render(); });
   const cl=document.getElementById('clearLeads'); if(cl) cl.addEventListener('click',()=>{

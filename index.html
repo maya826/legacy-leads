@@ -342,7 +342,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 35</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 36</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -887,12 +887,16 @@ function render(){
   hydrateFMV(shown);
   renderMap();
 }
-let _fmvBusy=false; const FMV_VER=3;
+let _fmvBusy=false; const FMV_VER=4;
+// county -> ArcGIS parcel service (CORS-verified). val=appraised/fair-market value field; owner-only counties have val:null
 const COUNTY_GIS={
-  Gwinnett:{u:'https://gis3.gwinnettcounty.com/mapvis/rest/services/GISDataBrowser/GC_Parcel/MapServer/6',num:'STRNUM',name:'STRNAME',addr:'LOCADDR',val:'TOTVAL1',owner:'OWNER1',mail:'MAILADDR'}
+  GWINNETT:{u:'https://gis3.gwinnettcounty.com/mapvis/rest/services/GISDataBrowser/GC_Parcel/MapServer/6',addr:'LOCADDR',val:'TOTVAL1',owner:'OWNER1',mail:'MAILADDR'},
+  DEKALB:{u:'https://dcgis.dekalbcountyga.gov/hosted/rest/services/Parcels/MapServer/0',addr:'SITEADDRESS',val:'TOTAPR1',owner:'OWNERNME1',mail:'PSTLADDRESS'},
+  FULTON:{u:'https://services1.arcgis.com/AQDHTHDrZzfsFsB5/arcgis/rest/services/Tax_Parcels/FeatureServer/0',addr:'Address',val:null,owner:'Owner',mail:'OwnerAddr1'},
+  JEFFERSON:{u:'https://jccgis.jccal.org/server/rest/services/DDS/AccelaTest/MapServer/3',addr:'ADDR_APR',val:'PrevParcelTotal',owner:'OWNERNAME',mail:'PROP_MAIL'}
 };
-const CITY_COUNTY={LAWRENCEVILLE:'Gwinnett',DULUTH:'Gwinnett',LILBURN:'Gwinnett',SNELLVILLE:'Gwinnett',NORCROSS:'Gwinnett',SUWANEE:'Gwinnett',BUFORD:'Gwinnett',GRAYSON:'Gwinnett',LOGANVILLE:'Gwinnett',DACULA:'Gwinnett','SUGAR HILL':'Gwinnett','BERKELEY LAKE':'Gwinnett'};
-function leadCounty(l){ let c=(l.county||'').replace(/county/i,'').trim(); if(c){ return c.split(/\s+/).map(w=>w?w[0].toUpperCase()+w.slice(1).toLowerCase():'').join(' '); } const city=cityOf(l).toUpperCase(); return CITY_COUNTY[city]||''; }
+const CITY_COUNTY={LAWRENCEVILLE:'GWINNETT',DULUTH:'GWINNETT',LILBURN:'GWINNETT',SNELLVILLE:'GWINNETT',NORCROSS:'GWINNETT',SUWANEE:'GWINNETT',BUFORD:'GWINNETT',GRAYSON:'GWINNETT',LOGANVILLE:'GWINNETT',DACULA:'GWINNETT','SUGAR HILL':'GWINNETT','BERKELEY LAKE':'GWINNETT',DECATUR:'DEKALB',STONECREST:'DEKALB','STONE MOUNTAIN':'DEKALB',LITHONIA:'DEKALB',TUCKER:'DEKALB',CLARKSTON:'DEKALB',CHAMBLEE:'DEKALB',DORAVILLE:'DEKALB',BIRMINGHAM:'JEFFERSON',BESSEMER:'JEFFERSON',HOOVER:'JEFFERSON',PINSON:'JEFFERSON',FAIRFIELD:'JEFFERSON',CENTERPOINT:'JEFFERSON'};
+function leadCounty(l){ let c=(l.county||'').replace(/county/i,'').trim().toUpperCase(); if(c) return c; const city=cityOf(l).toUpperCase(); return CITY_COUNTY[city]||''; }
 async function fetchFMVfor(l){
   l.fmvv=FMV_VER;
   const cfg=COUNTY_GIS[leadCounty(l)]; if(!cfg){ l.fmv='none'; return; }
@@ -900,17 +904,17 @@ async function fetchFMVfor(l){
   if(!m){ l.fmv='none'; return; }
   const num=m[1]; const words=m[2].toUpperCase().replace(/[.,#].*/,'').split(/\s+/).filter(Boolean);
   const fw=(words[0]||'').replace(/'/g,''); if(!fw){ l.fmv='none'; return; }
+  const of=[cfg.addr]; if(cfg.owner)of.push(cfg.owner); if(cfg.mail)of.push(cfg.mail); if(cfg.val)of.push(cfg.val);
   const where=encodeURIComponent(`${cfg.addr} LIKE '${num} ${fw}%'`);
-  const url=`${cfg.u}/query?where=${where}&outFields=${cfg.addr},${cfg.val},${cfg.owner},${cfg.mail}&resultRecordCount=15&f=json`;
-  let r; try{ const resp=await fetch(url); r=await resp.json(); }catch(e){ l.fmv='none'; return; }
+  const url=`${cfg.u}/query?where=${where}&outFields=${of.join(',')}&returnGeometry=false&resultRecordCount=15&f=json`;
+  let r; try{ const c=new AbortController(); const t=setTimeout(()=>c.abort(),9000); r=await (await fetch(url,{signal:c.signal})).json(); clearTimeout(t);}catch(e){ l.fmv='none'; return; }
   const feats=(r&&r.features)||[]; if(!feats.length){ l.fmv='none'; return; }
   let pick=feats[0];
   if(words.length>1){ const w2=words[1]; const b=feats.find(f=>((f.attributes[cfg.addr]||'')+'').toUpperCase().includes(w2)); if(b) pick=b; }
   const a=pick.attributes||{};
-  const v=parseInt((a[cfg.val]||'0')+'',10);
-  l.fmv=(v>0)?v:'none';
-  if(a[cfg.owner]) l.ownerRec=(a[cfg.owner]+'').trim();
-  if(a[cfg.mail]) l.mailRec=(a[cfg.mail]+'').trim();
+  if(cfg.val){ const v=parseInt((a[cfg.val]||'0')+'',10); l.fmv=(v>0)?v:'owner'; } else { l.fmv='owner'; }
+  if(cfg.owner&&a[cfg.owner]) l.ownerRec=(a[cfg.owner]+'').replace(/\s+/g,' ').trim();
+  if(cfg.mail&&a[cfg.mail]) l.mailRec=(a[cfg.mail]+'').replace(/\s+/g,' ').trim();
 }
 async function hydrateFMV(shown){
   if(_fmvBusy) return;
@@ -1092,10 +1096,13 @@ document.addEventListener('click', e=>{
   }
 });
 function houseNum(a){ const m=(a||'').match(/^\s*(\d+)/); return m?m[1]:''; }
+function abbrMoney(n){ if(!(n>0)) return ''; if(n>=1e6) return '$'+(n/1e6).toFixed(n>=1e7?0:1).replace(/\.0$/,'')+'M'; if(n>=1e3) return '$'+Math.round(n/1e3)+'K'; return '$'+n; }
 function dmPin(l){
-  const num=houseNum(l.address)||'\u2022';
   const cls=l.source==='foreclosure'?'fc':'dr';
-  return L.divIcon({className:'', html:`<div class="dmpin ${cls}"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>${num}</div>`, iconSize:[44,28], iconAnchor:[22,28], popupAnchor:[0,-26]});
+  const money=(typeof l.fmv==='number')?abbrMoney(l.fmv):'';
+  const label=money||houseNum(l.address)||'\u2022';
+  const w=Math.max(44, 20+label.length*8.5);
+  return L.divIcon({className:'', html:`<div class="dmpin ${cls}"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>${label}</div>`, iconSize:[w,28], iconAnchor:[w/2,28], popupAnchor:[0,-26]});
 }
 function dot(color){ return L.divIcon({className:'',html:`<div style="width:18px;height:18px;border-radius:50%;background:${color};border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.6)"></div>`,iconSize:[18,18],iconAnchor:[9,9]}); }
 function renderMap(fit){

@@ -344,7 +344,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 38</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 39</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -636,8 +636,9 @@ async function reverseGeocode(lat,lng){
   const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,{headers:{'Accept':'application/json'}}); if(!r.ok) throw 0;
   const d=await r.json(), a=d.address||{};
   const num=a.house_number||"", road=a.road||a.pedestrian||a.footway||"";
-  const city=a.city||a.town||a.village||a.hamlet||a.suburb||"";
-  const st=a.state_code||a.state||"", zip=a.postcode||"";
+  const city=a.city||a.town||a.village||a.hamlet||a.municipality||a.city_district||a.suburb||(a.county?a.county.replace(/\s+County$/i,''):"")||"";
+  const iso=(a['ISO3166-2-lvl4']||'').split('-')[1]||'';
+  const st=a.state_code||iso||a.state||"", zip=a.postcode||"";
   return [[num,road].filter(Boolean).join(" "), city, [st,zip].filter(Boolean).join(" ")].filter(Boolean).join(", ") || d.display_name || "";
 }
 async function enrichAddr(street, lat, lng){

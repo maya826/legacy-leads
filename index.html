@@ -34,7 +34,7 @@
   html,body{margin:0;height:100%;}
   body{
     font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
-    color:var(--text); height:100vh; overflow:hidden; display:flex; flex-direction:column;
+    color:var(--text); height:100vh; height:100dvh; overflow:hidden; display:flex; flex-direction:column;
     background:var(--bg); letter-spacing:-.01em;
   }
   ::-webkit-scrollbar{width:0;height:0;}
@@ -313,7 +313,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 18</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 19</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -514,7 +514,7 @@ window.loadBundledFC=async function(){
   }, 700);
 };
 let leads = load();
-let editingId = null, pendingCoords = null, modalStatus = "New", leadFilter='all', leadSearch='', pendingPhoto='';
+let editingId = null, pendingCoords = null, modalStatus = "New", leadFilter='houses', leadSearch='', pendingPhoto='';
 let map, markerLayer;
 
 function load(){ try{ return JSON.parse(localStorage.getItem(KEY)) || []; }catch(e){ return []; } }
@@ -824,7 +824,13 @@ function render(){
     </div>`;}).join('');
   renderMap();
 }
+function isHouse(l){
+  const t=((l.notes||'')+' '+(l.address||'')).toLowerCase();
+  if(/condo|town\s?home|townhouse|duplex|triplex|quadruplex|4-?plex|apartment|\bapt\b|\bunit\b|\bste\b|#\s?\d|mobile|manufactured|commercial|vacant|\blot\b|acre/.test(t)) return false;
+  return true;
+}
 function leadMatch(l){
+  if(leadFilter==='houses'&&!isHouse(l)) return false;
   if(leadFilter==='foreclosure'&&l.source!=='foreclosure') return false;
   if(leadFilter==='driving'&&l.source!=='driving') return false;
   if(leadFilter==='nophone'&&(l.phone||l.status==='Pass')) return false;
@@ -833,7 +839,7 @@ function leadMatch(l){
 }
 function buildFilterChips(){
   const el=document.getElementById('filterChips'); if(!el) return;
-  const defs=[['all','All',leads.length],['foreclosure','Foreclosures',leads.filter(l=>l.source==='foreclosure').length],['driving','Driving',leads.filter(l=>l.source==='driving').length],['nophone','Need phone',leads.filter(l=>!l.phone&&l.status!=='Pass').length]];
+  const defs=[['houses','\ud83c\udfe0 Houses',leads.filter(isHouse).length],['all','All',leads.length],['foreclosure','Foreclosures',leads.filter(l=>l.source==='foreclosure').length],['driving','Driving',leads.filter(l=>l.source==='driving').length],['nophone','Need phone',leads.filter(l=>!l.phone&&l.status!=='Pass').length]];
   el.innerHTML=defs.map(d=>`<button class="fchip ${leadFilter===d[0]?'sel':''}" onclick="setFilter('${d[0]}')">${d[1]} ${d[2]}</button>`).join('');
 }
 window.setFilter=function(f){ leadFilter=f; render(); };
@@ -939,7 +945,7 @@ document.addEventListener('click', e=>{
 function dot(color){ return L.divIcon({className:'',html:`<div style="width:18px;height:18px;border-radius:50%;background:${color};border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.6)"></div>`,iconSize:[18,18],iconAnchor:[9,9]}); }
 function renderMap(fit){
   if(!map) return; markerLayer.clearLayers();
-  const pts=leads.filter(l=>l.coords);
+  const pts=leads.filter(l=>l.coords && leadMatch(l));
   const batch=[];
   pts.forEach(l=>{
     const m=L.marker([l.coords.lat,l.coords.lng],{icon:dot(l.source==='foreclosure'?'#B23A6A':(l.source==='driving'?'#6C2B45':'#8a3a59'))});

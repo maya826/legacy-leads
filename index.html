@@ -313,7 +313,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 19</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 20</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -825,8 +825,11 @@ function render(){
   renderMap();
 }
 function isHouse(l){
-  const t=((l.notes||'')+' '+(l.address||'')).toLowerCase();
-  if(/condo|town\s?home|townhouse|duplex|triplex|quadruplex|4-?plex|apartment|\bapt\b|\bunit\b|\bste\b|#\s?\d|mobile|manufactured|commercial|vacant|\blot\b|acre/.test(t)) return false;
+  const addr=(l.address||'').toLowerCase();
+  const notes=(l.notes||'').toLowerCase();
+  if(/condo|town\s?home|townhouse|duplex|triplex|quadruplex|4-?plex|apartment|manufactured home|mobile\/manufactured/.test(notes)) return false;
+  if(/\bapt\b|\bunit\b|\bste\b|#\s?\d|\bbldg\b|condominium/.test(addr)) return false;
+  if(/vacant|commercial|\blot\b|\bacre/.test(addr)) return false;
   return true;
 }
 function leadMatch(l){

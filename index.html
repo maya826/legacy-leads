@@ -317,6 +317,8 @@
   .dmpin.fc{background:var(--brand);} .dmpin.dr{background:#9b5277;}
   .dmpin svg{width:11px;height:11px;stroke:#fff;stroke-width:2.4;fill:none;}
   .dmpin::after{content:'';position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #fff;}
+  .hpin{display:inline-block;background:#fff;color:#2C1E27;font-size:10px;font-weight:800;line-height:1;padding:2px 5px;border-radius:7px;border:1px solid rgba(108,43,69,.4);box-shadow:0 1px 3px rgba(44,30,39,.3);white-space:nowrap;cursor:pointer;}
+  .hpin:hover{background:var(--brand);color:#fff;}
   .me{width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
   .me-core{width:15px;height:15px;border-radius:50%;background:var(--brand);border:3px solid #fff;box-shadow:0 0 0 0 rgba(108,43,69,.4);animation:pulse 1.7s infinite;}
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(108,43,69,.4)}70%{box-shadow:0 0 0 18px rgba(108,43,69,0)}100%{box-shadow:0 0 0 0 rgba(108,43,69,0)}}
@@ -342,7 +344,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 36</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 37</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -1025,6 +1027,7 @@ function initMap(){
   markerLayer.addTo(map);
   initParcels();
   map.on('zoomend moveend', updateParcels);
+  map.on('zoomend moveend', scheduleHouseLabels);
   map.on('dragstart', ()=>{ follow=false; });
   map.on('click', onMapClick);
 }
@@ -1038,6 +1041,31 @@ async function onMapClick(e){
 
 /* ---- parcel lot-line overlays (free county/state GIS) ---- */
 let parcelLayers=[], parcelsOn=true, parcelHi=null;
+let houseLabels=null, _hlTimer=null;
+function houseNumFrom(p){ if(!p) return ''; const a=addrFrom(p); let m=(a||'').match(/^\s*(\d+)/); if(m) return m[1]; const k=Object.keys(p).find(k=>/(hous?e?_?(no|num|nbr)|str_?num|addr_?no|stnum|^num$|^addrno$)/i.test(k)); if(k&&p[k]!=null&&/\d/.test(String(p[k]))) return String(p[k]).replace(/\..*/,'').trim(); return ''; }
+function scheduleHouseLabels(){ clearTimeout(_hlTimer); _hlTimer=setTimeout(updateHouseLabels,250); }
+function updateHouseLabels(){
+  if(!map) return;
+  if(!houseLabels){ houseLabels=L.layerGroup(); }
+  if(!(parcelsOn && map.getZoom()>=17)){ if(map.hasLayer(houseLabels)) map.removeLayer(houseLabels); houseLabels.clearLayers(); return; }
+  if(!map.hasLayer(houseLabels)) houseLabels.addTo(map);
+  houseLabels.clearLayers();
+  const view=map.getBounds(); const seen=new Set(); let count=0;
+  parcelLayers.forEach(s=>{ if(!s.layer||!map.hasLayer(s.layer)) return;
+    try{ s.layer.eachFeature(l=>{
+      if(count>=450) return;
+      const p=l.feature&&l.feature.properties; if(!p) return;
+      let c; try{ c=l.getBounds().getCenter(); }catch(e){ return; }
+      if(!view.contains(c)) return;
+      const num=houseNumFrom(p); if(!num) return;
+      const key=num+'@'+c.lat.toFixed(5)+','+c.lng.toFixed(5); if(seen.has(key)) return; seen.add(key); count++;
+      const addr=addrFrom(p)||''; const owner=ownerFrom(p)||'';
+      L.marker(c,{icon:L.divIcon({className:'',html:`<div class="hpin">${num}</div>`,iconSize:[44,16],iconAnchor:[22,8]}),keyboard:false})
+        .on('click',ev=>{ if(ev&&ev.originalEvent) L.DomEvent.stop(ev.originalEvent); pendingCoords={lat:c.lat,lng:c.lng}; openModal(null,{address:addr,owner:owner}); })
+        .addTo(houseLabels);
+    }); }catch(e){}
+  });
+}
 const PARCEL_SVCS=[
   {name:'Cobb',     url:'https://gis.cobbcounty.gov/gisserver/rest/services/tax/taxassessorsdaily/MapServer/0'},
   {name:'Fulton',   url:'https://gismaps.fultoncountyga.gov/arcgispub2/rest/services/PropertyMapViewer/PropertyMapViewer/MapServer/11'},
@@ -1050,6 +1078,7 @@ function initParcels(){
   PARCEL_SVCS.forEach(s=>{
     try{ s.layer=L.esri.featureLayer({url:s.url, minZoom:16, simplifyFactor:0.4, precision:6,
       style:()=>({color:'#6C2B45', weight:0.7, opacity:.28, fillOpacity:0})});
+      s.layer.on('load', scheduleHouseLabels);
       parcelLayers.push(s);
     }catch(e){}
   });
@@ -1091,7 +1120,7 @@ function identifyParcel(latlng){
 }
 document.addEventListener('click', e=>{
   if(e.target.closest && e.target.closest('#parcelBtn')){
-    parcelsOn=!parcelsOn; document.getElementById('parcelBtn').classList.toggle('on',parcelsOn); updateParcels();
+    parcelsOn=!parcelsOn; document.getElementById('parcelBtn').classList.toggle('on',parcelsOn); updateParcels(); updateHouseLabels();
     toast(parcelsOn?"Lot lines on":"Lot lines off");
   }
 });

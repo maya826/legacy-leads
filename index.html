@@ -150,6 +150,8 @@
   .lead-body{padding:13px 15px;}
   .lead-head{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
   .lead-addr{font-family:var(--serif); font-weight:600; font-size:16px; line-height:1.2; letter-spacing:-.01em; color:var(--brand);}
+  .lead-val{font-family:var(--serif); font-size:23px; font-weight:700; color:var(--brand); line-height:1; margin-bottom:3px;}
+  .lead-val span{font-family:'Inter',sans-serif; font-size:10.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-left:7px;}
   .lead-sub{font-size:12.5px; color:var(--muted); margin-top:3px; font-weight:600;}
   .lead-sub b{color:var(--fc-d); font-weight:800;}
   .lead-pills{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;}
@@ -340,7 +342,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 30</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 31</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -860,9 +862,12 @@ function render(){
     if(bb) pills.push(`<span class="tag">${bb[1]} bd · ${bb[2]} ba</span>`);
     if(loan && l.source==='foreclosure') pills.push(`<span class="tag tag-loan">${esc(loan)} loan</span>`);
     if(l.phone) pills.push(`<span class="tag tag-ph">has phone</span>`);
+    const dollar=(N.match(/\$[\d.,]+\s*k?/i)||[])[0];
+    let vlbl=''; if(/judgment/i.test(N)) vlbl='judgment'; else if(/assessed/i.test(N)) vlbl='assessed value'; else if(l.source==='foreclosure'&&dollar) vlbl='loan balance';
     return `<div class="lead ${cls}" onclick="openModal('${l.id}')">
       ${photo}
       <div class="lead-body">
+        ${dollar?`<div class="lead-val">${esc(dollar.replace(/\s+/g,''))}<span>${vlbl}</span></div>`:''}
         <div class="lead-addr">${esc(A.street||l.address)}</div>
         <div class="lead-sub">${esc(sub)}${l.saleDate?` · <b>Sale ${esc(l.saleDate)}</b>`:''}</div>
         <div class="lead-pills">${pills.join('')}</div>

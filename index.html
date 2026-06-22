@@ -114,6 +114,9 @@
   .filterbar{display:flex; gap:8px; padding:12px 16px 4px; align-items:center;}
   .filterbar input#leadSearch{flex:1; background:#fff; border:1px solid var(--line-2); color:var(--text); padding:11px 13px; border-radius:12px; font-size:14px; font-family:inherit;}
   .filterbar input#leadSearch:focus{outline:none; border-color:var(--brand); box-shadow:0 0 0 3px var(--brand-glow);}
+  .cityrow{padding:12px 16px 0;}
+  .cityrow select{width:100%; background:#fff; border:1px solid var(--line-2); color:var(--text); padding:12px 13px; border-radius:12px; font-size:14px; font-weight:600; font-family:inherit;}
+  .cityrow select:focus{outline:none; border-color:var(--brand);}
   .clearbtn{background:#fff; border:1px solid var(--line-2); color:var(--muted); width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
   .chips{display:flex; gap:7px; padding:10px 16px 2px; overflow-x:auto;}
   .fchip{font-size:12px; font-weight:700; padding:8px 14px; border-radius:30px; background:#fff; border:1px solid var(--line-2); color:var(--muted); white-space:nowrap;}
@@ -313,7 +316,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 20</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 21</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -334,6 +337,7 @@
       <button class="btn" id="exportCsv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Export</button>
       <input type="file" id="csvFile" accept=".csv,text/csv" style="display:none">
     </div>
+    <div class="cityrow"><select id="cityFilter"><option value="">All cities</option></select></div>
     <div class="filterbar">
       <input id="leadSearch" placeholder="Search address or owner…" autocomplete="off">
       <button class="clearbtn" id="clearLeads" title="Clear shown leads"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
@@ -514,7 +518,7 @@ window.loadBundledFC=async function(){
   }, 700);
 };
 let leads = load();
-let editingId = null, pendingCoords = null, modalStatus = "New", leadFilter='houses', leadSearch='', pendingPhoto='';
+let editingId = null, pendingCoords = null, modalStatus = "New", leadFilter='houses', leadSearch='', leadCity='', pendingPhoto='';
 let map, markerLayer;
 
 function load(){ try{ return JSON.parse(localStorage.getItem(KEY)) || []; }catch(e){ return []; } }
@@ -784,6 +788,7 @@ function render(){
   document.getElementById('sDrive').textContent=leads.filter(l=>l.source==='driving').length;
   document.getElementById('sHot').textContent=leads.filter(l=>!l.phone && l.status!=='Pass').length;
   buildFilterChips();
+  buildCityFilter();
   const wrap=document.getElementById('leadList');
   if(!leads.length){
     wrap.innerHTML=`<div class="empty"><div class="ico">${ICN.map}</div><h3>No leads yet</h3><p>Tap <b>Capture</b> while driving, <b>Add lead</b> manually, or pull a batch from the <b>Foreclosures</b> tab.</p></div>`;
@@ -824,6 +829,7 @@ function render(){
     </div>`;}).join('');
   renderMap();
 }
+function cityOf(l){ const p=(l.address||'').split(','); return p.length>=3 ? p[p.length-2].trim() : ''; }
 function isHouse(l){
   const addr=(l.address||'').toLowerCase();
   const notes=(l.notes||'').toLowerCase();
@@ -833,12 +839,21 @@ function isHouse(l){
   return true;
 }
 function leadMatch(l){
+  if(leadCity && cityOf(l).toUpperCase()!==leadCity) return false;
   if(leadFilter==='houses'&&!isHouse(l)) return false;
   if(leadFilter==='foreclosure'&&l.source!=='foreclosure') return false;
   if(leadFilter==='driving'&&l.source!=='driving') return false;
   if(leadFilter==='nophone'&&(l.phone||l.status==='Pass')) return false;
   if(leadSearch){ const h=(l.address+' '+(l.owner||'')+' '+(l.county||'')).toLowerCase(); if(!h.includes(leadSearch)) return false; }
   return true;
+}
+function buildCityFilter(){
+  const sel=document.getElementById('cityFilter'); if(!sel) return;
+  const counts={};
+  leads.forEach(l=>{ const c=cityOf(l); if(c){ const k=c.toUpperCase(); counts[k]=(counts[k]||0)+1; } });
+  const cities=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]||a.localeCompare(b));
+  const tc=str=>str.replace(/\w\S*/g,w=>w[0].toUpperCase()+w.slice(1).toLowerCase());
+  sel.innerHTML='<option value="">All cities ('+leads.length+')</option>'+cities.map(k=>`<option value="${k}" ${leadCity===k?'selected':''}>${tc(k)} (${counts[k]})</option>`).join('');
 }
 function buildFilterChips(){
   const el=document.getElementById('filterChips'); if(!el) return;
@@ -853,6 +868,7 @@ function compressImg(file, cb){
 }
 (function(){
   const s=document.getElementById('leadSearch'); if(s) s.addEventListener('input',e=>{ leadSearch=e.target.value.toLowerCase().trim(); render(); });
+  const cf=document.getElementById('cityFilter'); if(cf) cf.addEventListener('change',e=>{ leadCity=e.target.value; render(); });
   const cl=document.getElementById('clearLeads'); if(cl) cl.addEventListener('click',()=>{
     const v=leads.filter(leadMatch); if(!v.length){ toast('Nothing to clear','err'); return; }
     const label=(leadFilter==='all'&&!leadSearch)?('all '+leads.length+' leads'):(v.length+' shown');

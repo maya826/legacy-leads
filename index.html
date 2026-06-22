@@ -335,6 +335,11 @@
   .pc-del{margin-left:auto;background:none;border:none;color:#b14a63;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:4px;cursor:pointer;}
   .pc-del svg{width:14px;height:14px;}
   .pc-key{display:block;margin-top:8px;background:rgba(255,255,255,.9);color:var(--brand);border:none;font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;cursor:pointer;}
+  .dchips-h{font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:12px 0 6px;}
+  .dchips{display:flex;flex-wrap:wrap;gap:6px;}
+  .dchip{background:#F3E7EC;color:var(--brand);border:1.5px solid transparent;font-size:12px;font-weight:700;padding:6px 12px;border-radius:20px;cursor:pointer;}
+  .dchip.on{background:var(--brand);color:#fff;}
+  .pc-add{display:block;width:100%;margin:14px 0 4px;background:var(--brand);color:#fff;border:none;font-size:15px;font-weight:800;padding:13px;border-radius:13px;cursor:pointer;}
   .me{width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
   .me-core{width:15px;height:15px;border-radius:50%;background:var(--brand);border:3px solid #fff;box-shadow:0 0 0 0 rgba(108,43,69,.4);animation:pulse 1.7s infinite;}
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(108,43,69,.4)}70%{box-shadow:0 0 0 18px rgba(108,43,69,0)}100%{box-shadow:0 0 0 0 rgba(108,43,69,0)}}
@@ -360,7 +365,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 40</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 41</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -1063,11 +1068,10 @@ function initMap(){
   map.on('click', onMapClick);
 }
 async function onMapClick(e){
-  const {lat,lng}=e.latlng; pendingCoords={lat,lng};
+  const {lat,lng}=e.latlng;
   const info=await identifyParcel(e.latlng).catch(()=>({}));
   const address=await enrichAddr((info&&info.address)||"", lat, lng);
-  openModal(null,{address, owner:(info&&info.owner)||""});
-  if(info&&info.parcelId){ const n=document.getElementById('fNotes'); n.value=(n.value?n.value+' · ':'')+'Parcel '+info.parcelId; }
+  openPropDraft({address, owner:(info&&info.owner)||"", coords:{lat,lng}, parcelId:(info&&info.parcelId)||""});
 }
 
 /* ---- parcel lot-line overlays (free county/state GIS) ---- */
@@ -1092,7 +1096,7 @@ function updateHouseLabels(){
       const key=num+'@'+c.lat.toFixed(5)+','+c.lng.toFixed(5); if(seen.has(key)) return; seen.add(key); count++;
       const addr=addrFrom(p)||''; const owner=ownerFrom(p)||'';
       L.marker(c,{icon:L.divIcon({className:'',html:`<div class="hpin">${num}</div>`,iconSize:[44,16],iconAnchor:[22,8]}),keyboard:false})
-        .on('click',async ev=>{ if(ev&&ev.originalEvent) L.DomEvent.stop(ev.originalEvent); pendingCoords={lat:c.lat,lng:c.lng}; const full=await enrichAddr(addr,c.lat,c.lng); openModal(null,{address:full,owner:owner}); })
+        .on('click',async ev=>{ if(ev&&ev.originalEvent) L.DomEvent.stop(ev.originalEvent); const full=await enrichAddr(addr,c.lat,c.lng); openPropDraft({address:full, owner:owner, coords:{lat:c.lat,lng:c.lng}}); })
         .addTo(houseLabels);
     }); }catch(e){}
   });
@@ -1238,6 +1242,51 @@ window.openPropSheet=function(id){
 window.closePropSheet=function(){
   document.getElementById('propBg').classList.remove('show');
   const fw=document.getElementById('fabWrap'); if(fw && document.getElementById('mapView').classList.contains('active')) fw.style.display='flex';
+};
+window._draft=null; window._draftStatus='New';
+window.setDraftStatus=function(st){ window._draftStatus=st; if(window._draft) openPropDraft(window._draft); };
+window._draftPrefill=function(){ const d=window._draft||{}; pendingCoords=d.coords||null; return {address:d.address||'',owner:d.owner||'',status:window._draftStatus, notes:d.parcelId?('Parcel '+d.parcelId):''}; };
+window.addDraft=function(){
+  const d=window._draft||{}; if(!d.address){ toast('No address'); return; }
+  const lead={id:uid(), address:d.address, status:window._draftStatus||'New', owner:d.owner||'', mailing:'', phone:'', email:'', saleDate:'', county:d.county||'', notes:d.parcelId?('Parcel '+d.parcelId):'', coords:d.coords||null, photo:'', source:'driving', created:new Date().toISOString()};
+  leads.unshift(lead); save(); render(); closePropSheet(); toast('Lead added \u2713'); if(!lead.coords) geocodeQueue([lead]);
+};
+window.openPropDraft=function(d){
+  window._draft=d;
+  const A=parseAddr(d.address||'');
+  const pbg=propUrl({coords:d.coords},640,360);
+  const owner=d.owner||'';
+  const traces=traceUrls(owner,d.address||'');
+  const zill=traces.find(t=>/zillow/i.test(t.label))||traces[0];
+  const goog=traces.find(t=>/google/i.test(t.label));
+  const sub=[(A.city?A.city+(A.state?', '+A.state:''):''), (d.county?(d.county+'').replace(/county/i,'').trim()+' County':'')].filter(Boolean).join(' \u00b7 ');
+  const STC=['New','Foreclosure','Vacant','Distressed','Absentee'];
+  const chips=STC.map(st=>`<button class="dchip${st===window._draftStatus?' on':''}" onclick="setDraftStatus('${st}')">${st}</button>`).join('');
+  const rec=[];
+  if(d.parcelId) rec.push(['Parcel',esc(d.parcelId)]);
+  if(d.coords) rec.push(['Location',d.coords.lat.toFixed(5)+', '+d.coords.lng.toFixed(5)]);
+  document.getElementById('propBody').innerHTML=`
+    <div class="pc-photo" ${pbg?`style="background-image:url('${pbg}')"`:''}>
+      ${pbg?'':`<div class="pc-ph">${HOUSE_SVG}${gsvKey()?'':'<button class="pc-key" onclick="event.stopPropagation();setGsvKey()">+ add real photos</button>'}</div>`}
+      <button class="pc-x" onclick="closePropSheet()">${XSVG}</button>
+    </div>
+    <div class="pc-body">
+      <div class="pc-addr">${esc(A.street||d.address||'New lead')}</div>
+      <div class="pc-sub">${esc(sub||'Tapped from map')}</div>
+      ${owner?`<div class="pc-own">${ICN.user}${esc(owner)}</div>`:`<div class="pc-own" style="color:var(--muted-2)">Owner not in county data \u2014 use skip-trace below</div>`}
+      <div class="dchips-h">Mark as</div>
+      <div class="dchips">${chips}</div>
+      ${rec.length?`<div class="pc-rec"><div class="pc-rec-h">County records</div>${rec.map(r=>`<div class="pc-rec-row"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('')}</div>`:''}
+      <button class="pc-add" onclick="addDraft()">+ Add to my leads</button>
+      <div class="pc-acts2">
+        <a class="pc-trace" href="${zill?zill.url:'#'}" target="_blank" rel="noopener">\ud83c\udfe0 Zillow</a>
+        ${goog?`<a class="pc-trace" href="${goog.url}" target="_blank" rel="noopener">Find phone</a>`:''}
+        ${traces.filter(t=>!/zillow|google/i.test(t.label)).map(t=>`<a class="pc-trace" href="${t.url}" target="_blank" rel="noopener">${esc(t.label)}</a>`).join('')}
+        <button class="pc-trace" onclick="closePropSheet();openModal(null,window._draftPrefill())">More fields</button>
+      </div>
+    </div>`;
+  document.getElementById('propBg').classList.add('show');
+  const fw=document.getElementById('fabWrap'); if(fw) fw.style.display='none';
 };
 
 /* Tabs */

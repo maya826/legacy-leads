@@ -121,6 +121,11 @@
   .citywrap::after{content:''; position:absolute; right:15px; top:50%; width:9px; height:9px; border-right:2.5px solid var(--brand); border-bottom:2.5px solid var(--brand); transform:translateY(-70%) rotate(45deg); pointer-events:none;}
   .cityrow select{width:100%; background:var(--rose-soft); border:1.5px solid var(--brand); color:var(--brand); padding:14px 40px 14px 15px; border-radius:12px; font-size:15.5px; font-weight:700; font-family:inherit; -webkit-appearance:none; appearance:none;}
   .cityrow select:focus{outline:none; box-shadow:0 0 0 3px var(--brand-glow);}
+  .daterow{padding:9px 16px 0;}
+  .daterow .clbl{font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:0 0 6px 2px; display:flex; align-items:center; gap:5px;}
+  .daterow .clbl svg{width:13px;height:13px;stroke:var(--muted);stroke-width:2.2;fill:none;}
+  .daterow select{width:100%; background:#fff; border:1px solid var(--line-2); color:var(--text); padding:13px 40px 13px 14px; border-radius:12px; font-size:15px; font-weight:600; font-family:inherit; -webkit-appearance:none; appearance:none;}
+  .daterow select:focus{outline:none; border-color:var(--brand);}
   .clearbtn{background:#fff; border:1px solid var(--line-2); color:var(--muted); width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
   .chips{display:flex; gap:7px; padding:10px 16px 2px; overflow-x:auto;}
   .fchip{font-size:12px; font-weight:700; padding:8px 14px; border-radius:30px; background:#fff; border:1px solid var(--line-2); color:var(--muted); white-space:nowrap;}
@@ -320,7 +325,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 24</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 25</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -342,6 +347,7 @@
       <input type="file" id="csvFile" accept=".csv,text/csv" style="display:none">
     </div>
     <div class="cityrow"><div class="clbl"><svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Filter by city — tap to choose your market</div><div class="citywrap"><select id="cityFilter"><option value="">All cities</option></select></div></div>
+    <div class="daterow"><div class="clbl"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>Filter by sale date</div><div class="citywrap"><select id="dateFilter"><option value="">All dates</option></select></div></div>
     <div class="filterbar">
       <input id="leadSearch" placeholder="Search address or owner…" autocomplete="off">
       <button class="clearbtn" id="clearLeads" title="Clear shown leads"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
@@ -522,7 +528,7 @@ window.loadBundledFC=async function(){
   }, 700);
 };
 let leads = load();
-let editingId = null, pendingCoords = null, modalStatus = "New", leadFilter=(localStorage.getItem('ll_filter')||'houses'), leadSearch='', leadCity=(localStorage.getItem('ll_city')||''), pendingPhoto='';
+let editingId = null, pendingCoords = null, modalStatus = "New", leadFilter=(localStorage.getItem('ll_filter')||'houses'), leadSearch='', leadCity=(localStorage.getItem('ll_city')||''), leadDate=(localStorage.getItem('ll_date')||''), pendingPhoto='';
 let map, markerLayer;
 
 function load(){ try{ return JSON.parse(localStorage.getItem(KEY)) || []; }catch(e){ return []; } }
@@ -793,6 +799,7 @@ function render(){
   document.getElementById('sHot').textContent=leads.filter(l=>!l.phone && l.status!=='Pass').length;
   buildFilterChips();
   buildCityFilter();
+  buildDateFilter();
   const wrap=document.getElementById('leadList');
   if(!leads.length){
     wrap.innerHTML=`<div class="empty"><div class="ico">${ICN.map}</div><h3>No leads yet</h3><p>Tap <b>Capture</b> while driving, <b>Add lead</b> manually, or pull a batch from the <b>Foreclosures</b> tab.</p></div>`;
@@ -833,6 +840,7 @@ function render(){
     </div>`;}).join('');
   renderMap();
 }
+function parseSaleDate(s){ const m=(s||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); return m?new Date(+m[3],+m[1]-1,+m[2]):null; }
 function cityOf(l){
   const a=(l.address||'').trim();
   const parts=a.split(',');
@@ -857,12 +865,27 @@ function isHouse(l){
 }
 function leadMatch(l){
   if(leadCity && cityOf(l).toUpperCase()!==leadCity) return false;
+  if(leadDate){
+    const sd=l.saleDate||'';
+    if(leadDate==='d7'||leadDate==='d30'){ const d=parseSaleDate(sd); if(!d) return false; const days=(d-Date.now())/86400000; if(days<-1||days>(leadDate==='d7'?7:30)) return false; }
+    else if(sd!==leadDate) return false;
+  }
   if(leadFilter==='houses'&&!isHouse(l)) return false;
   if(leadFilter==='foreclosure'&&l.source!=='foreclosure') return false;
   if(leadFilter==='driving'&&l.source!=='driving') return false;
   if(leadFilter==='nophone'&&(l.phone||l.status==='Pass')) return false;
   if(leadSearch){ const h=(l.address+' '+(l.owner||'')+' '+(l.county||'')).toLowerCase(); if(!h.includes(leadSearch)) return false; }
   return true;
+}
+function buildDateFilter(){
+  const sel=document.getElementById('dateFilter'); if(!sel) return;
+  const counts={}; leads.forEach(l=>{ const sd=l.saleDate||''; if(/\d{1,2}\/\d{1,2}\/\d{4}/.test(sd)) counts[sd]=(counts[sd]||0)+1; });
+  const dates=Object.keys(counts).sort((a,b)=>parseSaleDate(a)-parseSaleDate(b));
+  const withDate=leads.filter(l=>/\d{1,2}\/\d{1,2}\/\d{4}/.test(l.saleDate||'')).length;
+  let html='<option value="">All dates ('+leads.length+')</option>';
+  if(withDate){ html+='<option value="d7" '+(leadDate==='d7'?'selected':'')+'>Next 7 days</option><option value="d30" '+(leadDate==='d30'?'selected':'')+'>Next 30 days</option>'; }
+  html+=dates.map(d=>`<option value="${d}" ${leadDate===d?'selected':''}>${d} (${counts[d]})</option>`).join('');
+  sel.innerHTML=html;
 }
 function buildCityFilter(){
   const sel=document.getElementById('cityFilter'); if(!sel) return;
@@ -886,6 +909,7 @@ function compressImg(file, cb){
 (function(){
   const s=document.getElementById('leadSearch'); if(s) s.addEventListener('input',e=>{ leadSearch=e.target.value.toLowerCase().trim(); render(); });
   const cf=document.getElementById('cityFilter'); if(cf) cf.addEventListener('change',e=>{ leadCity=e.target.value; try{localStorage.setItem('ll_city',leadCity);}catch(e2){} render(); });
+  const df=document.getElementById('dateFilter'); if(df) df.addEventListener('change',e=>{ leadDate=e.target.value; try{localStorage.setItem('ll_date',leadDate);}catch(e3){} render(); });
   const cl=document.getElementById('clearLeads'); if(cl) cl.addEventListener('click',()=>{
     const v=leads.filter(leadMatch); if(!v.length){ toast('Nothing to clear','err'); return; }
     const label=(leadFilter==='all'&&!leadSearch)?('all '+leads.length+' leads'):(v.length+' shown');

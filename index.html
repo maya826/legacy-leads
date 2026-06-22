@@ -325,7 +325,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 27</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 28</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -981,8 +981,8 @@ const PARCEL_SVCS=[
 function initParcels(){
   if(typeof L==='undefined'||!L.esri) return;
   PARCEL_SVCS.forEach(s=>{
-    try{ s.layer=L.esri.featureLayer({url:s.url, minZoom:14, simplifyFactor:0.4, precision:6,
-      style:()=>({color:'#38BDF8', weight:1.1, opacity:.85, fillOpacity:0})});
+    try{ s.layer=L.esri.featureLayer({url:s.url, minZoom:16, simplifyFactor:0.4, precision:6,
+      style:()=>({color:'#6C2B45', weight:0.7, opacity:.28, fillOpacity:0})});
       parcelLayers.push(s);
     }catch(e){}
   });

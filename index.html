@@ -316,7 +316,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 22</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 23</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -518,7 +518,7 @@ window.loadBundledFC=async function(){
   }, 700);
 };
 let leads = load();
-let editingId = null, pendingCoords = null, modalStatus = "New", leadFilter='houses', leadSearch='', leadCity='', pendingPhoto='';
+let editingId = null, pendingCoords = null, modalStatus = "New", leadFilter=(localStorage.getItem('ll_filter')||'houses'), leadSearch='', leadCity=(localStorage.getItem('ll_city')||''), pendingPhoto='';
 let map, markerLayer;
 
 function load(){ try{ return JSON.parse(localStorage.getItem(KEY)) || []; }catch(e){ return []; } }
@@ -873,7 +873,7 @@ function buildFilterChips(){
   const defs=[['houses','\ud83c\udfe0 Houses',leads.filter(isHouse).length],['all','All',leads.length],['foreclosure','Foreclosures',leads.filter(l=>l.source==='foreclosure').length],['driving','Driving',leads.filter(l=>l.source==='driving').length],['nophone','Need phone',leads.filter(l=>!l.phone&&l.status!=='Pass').length]];
   el.innerHTML=defs.map(d=>`<button class="fchip ${leadFilter===d[0]?'sel':''}" onclick="setFilter('${d[0]}')">${d[1]} ${d[2]}</button>`).join('');
 }
-window.setFilter=function(f){ leadFilter=f; render(); };
+window.setFilter=function(f){ leadFilter=f; try{localStorage.setItem('ll_filter',f);}catch(e){} render(); };
 function compressImg(file, cb){
   const r=new FileReader();
   r.onload=e=>{ const img=new Image(); img.onload=()=>{ const max=1000; let w=img.width,h=img.height; if(w>max||h>max){ if(w>h){h=Math.round(h*max/w);w=max;}else{w=Math.round(w*max/h);h=max;} } const c=document.createElement('canvas'); c.width=w;c.height=h; c.getContext('2d').drawImage(img,0,0,w,h); try{ cb(c.toDataURL('image/jpeg',0.6)); }catch(err){ cb(''); } }; img.onerror=()=>cb(''); img.src=e.target.result; };
@@ -881,7 +881,7 @@ function compressImg(file, cb){
 }
 (function(){
   const s=document.getElementById('leadSearch'); if(s) s.addEventListener('input',e=>{ leadSearch=e.target.value.toLowerCase().trim(); render(); });
-  const cf=document.getElementById('cityFilter'); if(cf) cf.addEventListener('change',e=>{ leadCity=e.target.value; render(); });
+  const cf=document.getElementById('cityFilter'); if(cf) cf.addEventListener('change',e=>{ leadCity=e.target.value; try{localStorage.setItem('ll_city',leadCity);}catch(e2){} render(); });
   const cl=document.getElementById('clearLeads'); if(cl) cl.addEventListener('click',()=>{
     const v=leads.filter(leadMatch); if(!v.length){ toast('Nothing to clear','err'); return; }
     const label=(leadFilter==='all'&&!leadSearch)?('all '+leads.length+' leads'):(v.length+' shown');

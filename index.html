@@ -372,7 +372,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 46</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 47</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -462,8 +462,8 @@
       </div>
 
       <div class="card">
-        <div class="card-h"><div class="step">4</div><div><h3>Paste &amp; map</h3><p>Copy any list or notice above, paste here → leads with owner &amp; sale date</p></div></div>
-        <textarea id="fcPaste" placeholder="Paste copied foreclosure notices or list rows here…"></textarea>
+        <div class="card-h"><div class="step">4</div><div><h3>Paste &amp; map — works for any list (incl. Florida)</h3><p>For Florida/Orlando/Tampa: open the county RealForeclose auction list, select all, copy, and paste here. Also works for tax-sale lists &amp; legal notices. → drops leads with address, sale date &amp; judgment.</p></div></div>
+        <textarea id="fcPaste" placeholder="Paste a copied foreclosure list here — e.g. an Orange/Hillsborough RealForeclose auction page, a county tax-sale list, or legal notices…"></textarea>
         <button class="fc-go" id="fcParse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Extract &amp; map leads</button>
       </div>
 
@@ -734,10 +734,11 @@ function parseNotices(text){
     const start=Math.max(prevEnd, lastBound(m.index), m.index-1900);
     const ctx=T.slice(start, m.index+60); prevEnd=m.index+m[0].length;
     if(seen.has(key)) continue; seen.add(key);
-    out.push({address:full, owner:extractOwner(ctx), county:extractCounty(ctx), saleDate:extractSaleDate(ctx)});
+    out.push({address:full, owner:extractOwner(ctx), county:extractCounty(ctx), saleDate:extractSaleDate(ctx), note:extractMoney(ctx)});
   }
   return out;
 }
+function extractMoney(ctx){ const out=[]; let j=ctx.match(/(?:Final\s+)?Judgment\s*(?:Amount)?[:\s]*\$\s*([\d,]+(?:\.\d{2})?)/i); if(j) out.push('Judgment $'+j[1]); let a=ctx.match(/Assessed\s*(?:Value)?[:\s]*\$\s*([\d,]+(?:\.\d{2})?)/i); if(a) out.push('Assessed $'+a[1]); let c=ctx.match(/Case\s*(?:#|No\.?|Number)[:\s]*([0-9A-Za-z\-]+)/i); if(c) out.push('Case '+c[1]); return out.join(' \u00b7 '); }
 function clean(s){ return (s||'').replace(/\s+/g,' ').trim().replace(/[.,;:]+$/,''); }
 function cleanName(s){ s=clean(s).replace(/\b(Defendant|Defendants|Plaintiff|et al|et\. al|Respondent|an individual|individually|unmarried|a single (?:man|woman))\b.*$/i,'').replace(/[,;]+$/,'').trim(); return (s.length<3||s.length>60)?"":s; }
 function extractOwner(ctx){
@@ -760,7 +761,9 @@ function extractCounty(ctx){
   return m?clean(m[1]):"";
 }
 function extractSaleDate(ctx){
-  let m=ctx.match(/\b(?:on|held on|date of sale[:\s])\s*((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4})/i);
+  let m=ctx.match(/\b(?:Auction\s*Sale\s*Date|Auction\s*Date|Sale\s*Date|Auction\s*Starts?)[:\s]+(\d{1,2}\/\d{1,2}\/\d{2,4})/i);
+  if(m) return clean(m[1]);
+  m=ctx.match(/\b(?:on|held on|date of sale[:\s])\s*((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4})/i);
   if(m) return clean(m[1]);
   m=ctx.match(/(first\s+\w+day\s+in\s+(?:January|February|March|April|May|June|July|August|September|October|November|December),?\s+\d{4})/i);
   if(m) return clean(m[1]);
@@ -779,7 +782,7 @@ document.getElementById('fcParse').addEventListener('click', ()=>{
   parsed.forEach(p=>{
     if(leads.some(l=>l.address.toLowerCase()===p.address.toLowerCase())) return;
     const lead={ id:uid(), address:p.address, status:"Foreclosure", owner:p.owner||"", mailing:"", phone:"",
-      saleDate:p.saleDate||"", county:p.county||"", notes:p.county?("County: "+p.county):"",
+      saleDate:p.saleDate||"", county:p.county||"", notes:[p.note, (p.county?("County: "+p.county):"")].filter(Boolean).join(" · "),
       coords:null, source:"foreclosure", created:new Date().toISOString() };
     leads.unshift(lead); newOnes.push(lead); added++;
   });

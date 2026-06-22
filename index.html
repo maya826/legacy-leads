@@ -342,7 +342,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 31</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 32</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -864,14 +864,18 @@ function render(){
     if(l.phone) pills.push(`<span class="tag tag-ph">has phone</span>`);
     const dollar=(N.match(/\$[\d.,]+\s*k?/i)||[])[0];
     let vlbl=''; if(/judgment/i.test(N)) vlbl='judgment'; else if(/assessed/i.test(N)) vlbl='assessed value'; else if(l.source==='foreclosure'&&dollar) vlbl='loan balance';
-    return `<div class="lead ${cls}" onclick="openModal('${l.id}')">
+    let hv='', hl='';
+    if(typeof l.fmv==='number'&&l.fmv>0){ hv='$'+l.fmv.toLocaleString(); hl='fair market value'; }
+    else if(dollar){ hv=dollar.replace(/\s+/g,''); hl=vlbl; }
+    const ownerDisp=l.owner||l.ownerRec||'';
+    return `<div class="lead ${cls}" data-fid="${l.id}" onclick="openModal('${l.id}')">
       ${photo}
       <div class="lead-body">
-        ${dollar?`<div class="lead-val">${esc(dollar.replace(/\s+/g,''))}<span>${vlbl}</span></div>`:''}
+        ${hv?`<div class="lead-val">${esc(hv)}<span>${hl}</span></div>`:''}
         <div class="lead-addr">${esc(A.street||l.address)}</div>
         <div class="lead-sub">${esc(sub)}${l.saleDate?` · <b>Sale ${esc(l.saleDate)}</b>`:''}</div>
         <div class="lead-pills">${pills.join('')}</div>
-        ${l.owner?`<div class="lead-owner">${ICN.user}${esc(l.owner)}${l.phone?` · ${esc(l.phone)}`:''}</div>`:''}
+        ${ownerDisp?`<div class="lead-owner">${ICN.user}${esc(ownerDisp)}${l.phone?` · ${esc(l.phone)}`:''}</div>`:''}
         ${!l.coords?`<div class="locating">📍 mapping… tap Locate</div>`:''}
         <div class="lead-actions" onclick="event.stopPropagation()">
           <a class="trace" ${phoneHref}>${ICN.phone}${l.phone?'Call':'Find phone'}</a>
@@ -880,7 +884,40 @@ function render(){
         </div>
       </div>
     </div>`;}).join('');
+  hydrateFMV(shown);
   renderMap();
+}
+let _fmvBusy=false;
+const COUNTY_GIS={
+  Gwinnett:{u:'https://gis3.gwinnettcounty.com/mapvis/rest/services/GISDataBrowser/GC_Parcel/MapServer/6',num:'STRNUM',name:'STRNAME',addr:'LOCADDR',val:'TOTVAL1',owner:'OWNER1',mail:'MAILADDR'}
+};
+const CITY_COUNTY={LAWRENCEVILLE:'Gwinnett',DULUTH:'Gwinnett',LILBURN:'Gwinnett',SNELLVILLE:'Gwinnett',NORCROSS:'Gwinnett',SUWANEE:'Gwinnett',BUFORD:'Gwinnett',GRAYSON:'Gwinnett',LOGANVILLE:'Gwinnett',DACULA:'Gwinnett','SUGAR HILL':'Gwinnett','BERKELEY LAKE':'Gwinnett'};
+function leadCounty(l){ let c=(l.county||'').replace(/county/i,'').trim(); if(c){ return c.split(/\s+/).map(w=>w?w[0].toUpperCase()+w.slice(1).toLowerCase():'').join(' '); } const city=cityOf(l).toUpperCase(); return CITY_COUNTY[city]||''; }
+async function fetchFMVfor(l){
+  const cfg=COUNTY_GIS[leadCounty(l)]; if(!cfg){ l.fmv='none'; return; }
+  const A=parseAddr(l.address); const m=(A.street||'').match(/^\s*(\d+)\s+([A-Za-z].*)$/);
+  if(!m){ l.fmv='none'; return; }
+  const num=m[1]; const words=m[2].toUpperCase().replace(/[.,#].*/,'').split(/\s+/).filter(Boolean);
+  const fw=(words[0]||'').replace(/'/g,''); if(!fw){ l.fmv='none'; return; }
+  const where=encodeURIComponent(`${cfg.num}='${num}' AND ${cfg.name} LIKE '${fw}%'`);
+  const url=`${cfg.u}/query?where=${where}&outFields=${cfg.addr},${cfg.val},${cfg.owner},${cfg.mail}&resultRecordCount=15&f=json`;
+  let r; try{ const resp=await fetch(url); r=await resp.json(); }catch(e){ l.fmv='none'; return; }
+  const feats=(r&&r.features)||[]; if(!feats.length){ l.fmv='none'; return; }
+  let pick=feats[0];
+  if(words.length>1){ const w2=words[1]; const b=feats.find(f=>((f.attributes[cfg.addr]||'')+'').toUpperCase().includes(w2)); if(b) pick=b; }
+  const a=pick.attributes||{};
+  const v=parseInt((a[cfg.val]||'0')+'',10);
+  l.fmv=(v>0)?v:'none';
+  if(a[cfg.owner]) l.ownerRec=(a[cfg.owner]+'').trim();
+  if(a[cfg.mail]) l.mailRec=(a[cfg.mail]+'').trim();
+}
+async function hydrateFMV(shown){
+  if(_fmvBusy) return;
+  const todo=shown.filter(l=>l.fmv===undefined && COUNTY_GIS[leadCounty(l)]).slice(0,30);
+  if(!todo.length) return;
+  _fmvBusy=true;
+  try{ await Promise.all(todo.map(l=>fetchFMVfor(l).catch(()=>{l.fmv='none';}))); }catch(e){}
+  save(); _fmvBusy=false; renderLeads();
 }
 function parseAddr(a){
   a=(a||'').trim();

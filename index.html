@@ -342,7 +342,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 33</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 34</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -887,13 +887,14 @@ function render(){
   hydrateFMV(shown);
   renderMap();
 }
-let _fmvBusy=false;
+let _fmvBusy=false; const FMV_VER=3;
 const COUNTY_GIS={
   Gwinnett:{u:'https://gis3.gwinnettcounty.com/mapvis/rest/services/GISDataBrowser/GC_Parcel/MapServer/6',num:'STRNUM',name:'STRNAME',addr:'LOCADDR',val:'TOTVAL1',owner:'OWNER1',mail:'MAILADDR'}
 };
 const CITY_COUNTY={LAWRENCEVILLE:'Gwinnett',DULUTH:'Gwinnett',LILBURN:'Gwinnett',SNELLVILLE:'Gwinnett',NORCROSS:'Gwinnett',SUWANEE:'Gwinnett',BUFORD:'Gwinnett',GRAYSON:'Gwinnett',LOGANVILLE:'Gwinnett',DACULA:'Gwinnett','SUGAR HILL':'Gwinnett','BERKELEY LAKE':'Gwinnett'};
 function leadCounty(l){ let c=(l.county||'').replace(/county/i,'').trim(); if(c){ return c.split(/\s+/).map(w=>w?w[0].toUpperCase()+w.slice(1).toLowerCase():'').join(' '); } const city=cityOf(l).toUpperCase(); return CITY_COUNTY[city]||''; }
 async function fetchFMVfor(l){
+  l.fmvv=FMV_VER;
   const cfg=COUNTY_GIS[leadCounty(l)]; if(!cfg){ l.fmv='none'; return; }
   const A=parseAddr(l.address); const m=(A.street||'').match(/^\s*(\d+)\s+([A-Za-z].*)$/);
   if(!m){ l.fmv='none'; return; }
@@ -913,7 +914,7 @@ async function fetchFMVfor(l){
 }
 async function hydrateFMV(shown){
   if(_fmvBusy) return;
-  const todo=shown.filter(l=>l.fmv===undefined && COUNTY_GIS[leadCounty(l)]).slice(0,30);
+  const todo=shown.filter(l=>(l.fmv===undefined||l.fmvv!==FMV_VER) && COUNTY_GIS[leadCounty(l)]).slice(0,30);
   if(!todo.length) return;
   _fmvBusy=true;
   try{ await Promise.all(todo.map(l=>fetchFMVfor(l).catch(()=>{l.fmv='none';}))); }catch(e){}

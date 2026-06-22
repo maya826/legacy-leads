@@ -372,7 +372,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 47</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 48</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -779,8 +779,10 @@ document.getElementById('fcParse').addEventListener('click', ()=>{
   const parsed=parseNotices(txt);
   if(!parsed.length){ toast("No property addresses found in that text","err"); return; }
   let added=0; const newOnes=[];
+  let skipped=0;
   parsed.forEach(p=>{
     if(leads.some(l=>l.address.toLowerCase()===p.address.toLowerCase())) return;
+    if(isTimeshare({address:p.address, notes:p.note||''})){ skipped++; return; }
     const lead={ id:uid(), address:p.address, status:"Foreclosure", owner:p.owner||"", mailing:"", phone:"",
       saleDate:p.saleDate||"", county:p.county||"", notes:[p.note, (p.county?("County: "+p.county):"")].filter(Boolean).join(" · "),
       coords:null, source:"foreclosure", created:new Date().toISOString() };
@@ -788,7 +790,7 @@ document.getElementById('fcParse').addEventListener('click', ()=>{
   });
   save(); render();
   const card=document.getElementById('fcResultCard'); card.style.display='block';
-  document.getElementById('fcResultTitle').textContent=`Found ${parsed.length} · added ${added} new`;
+  document.getElementById('fcResultTitle').textContent=`Found ${parsed.length} · added ${added} new`+(skipped?` · skipped ${skipped} timeshare/resort`:'');
   document.getElementById('fcResults').innerHTML=parsed.map(p=>`
     <div class="lead fc">
       <div class="lead-addr">${esc(p.address)}</div>
@@ -1008,9 +1010,14 @@ function cityOf(l){
   }
   return '';
 }
+function isTimeshare(l){
+  const t=((l.address||'')+' '+(l.notes||'')).toLowerCase();
+  return /time\s?share|interval|biennial|\bweek\s*#?\s*\d|\bwk\s*#|fixed week|floating week|odd year|even year|points club|vacation (?:club|village|villas?|resort|ownership)|\bresort\b|westgate|wyndham|orange lake|holiday inn club|hilton grand|bluegreen|diamond resort|silver lake resort|grande villas|vistana|marriott vacation/.test(t);
+}
 function isHouse(l){
   const addr=(l.address||'').toLowerCase();
   const notes=(l.notes||'').toLowerCase();
+  if(isTimeshare(l)) return false;
   if(/condo|town\s?home|townhouse|duplex|triplex|quadruplex|4-?plex|apartment|manufactured home|mobile\/manufactured/.test(notes)) return false;
   if(/\bapt\b|\bunit\b|\bste\b|#\s?\d|\bbldg\b|condominium/.test(addr)) return false;
   if(/vacant|commercial|\blot\b|\bacre/.test(addr)) return false;

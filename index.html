@@ -325,7 +325,7 @@
     <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
     <div>
       <h1>Legacy Leads</h1>
-      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 25</div>
+      <div class="sub">FORECLOSURE &amp; DRIVING · BUILD 26</div>
     </div>
   </div>
   <div class="pill" id="count"><span class="dot"></span>0</div>
@@ -556,13 +556,21 @@ function leadPhotoEl(l){
 
 /* skip-trace deep links */
 function traceUrls(owner, address){
-  const o=encodeURIComponent((owner||'').trim());
-  const oa=encodeURIComponent(((owner||'')+' '+(address||'')).trim());
+  const name=(owner||'').trim();
+  const o=encodeURIComponent(name);
+  const oa=encodeURIComponent((name+' '+(address||'')).trim());
+  const addrEnc=encodeURIComponent((address||'').trim());
+  const city=cityOf({address:address})||'';
+  const stM=(address||'').match(/\b(GA|AL|FL|[A-Z]{2})\s*\d{5}/); const st=stM?stM[1]:'';
+  const cs=[city,st].filter(Boolean).join(', ');
+  const nameSlug=name.replace(/\s+/g,'-').toLowerCase();
+  const csSlug=[city.replace(/\s+/g,'-'),st].filter(Boolean).join('-').toLowerCase();
   return [
+    {label:'\ud83c\udfe0 Zillow', url:`https://www.zillow.com/homes/${addrEnc}_rb/`},
     {label:'Google', url:`https://www.google.com/search?q=${oa}+phone`},
-    {label:'TruePeople', url:`https://www.truepeoplesearch.com/results?name=${o}`},
-    {label:'FastPeople', url:`https://www.fastpeoplesearch.com/name/${(owner||'').trim().replace(/\s+/g,'-').toLowerCase()}`},
-    {label:'Whitepages', url:`https://www.whitepages.com/name/${(owner||'').trim().replace(/\s+/g,'-')}`}
+    {label:'TruePeople', url:`https://www.truepeoplesearch.com/results?name=${o}`+(cs?`&citystatezip=${encodeURIComponent(cs)}`:'')},
+    {label:'FastPeople', url:`https://www.fastpeoplesearch.com/name/${nameSlug}`+(csSlug?`_${csSlug}`:'')},
+    {label:'Whitepages', url:`https://www.whitepages.com/name/${name.replace(/\s+/g,'-')}`+(cs?`/${city.replace(/\s+/g,'-')}-${st}`:'')}
   ];
 }
 
@@ -813,7 +821,8 @@ function render(){
     const traces=traceUrls(l.owner,l.address);
     const cls=l.source==='foreclosure'?'fc':(l.source==='driving'?'drive':'');
     const photo=leadPhotoEl(l);
-    const phoneHref=l.phone?`href="tel:${l.phone.replace(/[^0-9+]/g,'')}"`:`href="${traces[0].url}" target="_blank" rel="noopener"`;
+    const gphone='https://www.google.com/search?q='+encodeURIComponent(((l.owner||'')+' '+l.address).trim())+'+phone';
+    const phoneHref=l.phone?`href="tel:${l.phone.replace(/[^0-9+]/g,'')}"`:`href="${gphone}" target="_blank" rel="noopener"`;
     return `<div class="lead ${cls}" onclick="openModal('${l.id}')">
       ${photo}
       <div class="lead-body">
